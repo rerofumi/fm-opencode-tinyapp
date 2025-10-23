@@ -1,11 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
-	"time"
+	"net/url"
 	"opencode-gui-client/internal/models"
+	"time"
 )
 
 // Client is a client for the OpenCode API.
@@ -24,52 +27,180 @@ func NewClient(baseURL string) *Client {
 	}
 }
 
+// doRequest is a helper function to make HTTP requests.
+func (c *Client) doRequest(method, path string, query url.Values, body interface{}) (*http.Response, error) {
+	var reqBody io.Reader
+	if body != nil {
+		jsonBody, err := json.Marshal(body)
+		if err != nil {
+			return nil, err
+		}
+		reqBody = bytes.NewBuffer(jsonBody)
+	}
+
+	fullURL := fmt.Sprintf("%s%s", c.BaseURL, path)
+	if query != nil {
+		fullURL = fmt.Sprintf("%s?%s", fullURL, query.Encode())
+	}
+
+	req, err := http.NewRequest(method, fullURL, reqBody)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	return c.HTTPClient.Do(req)
+}
+
+// decodeResponse is a helper function to decode JSON responses.
+func decodeResponse(res *http.Response, target interface{}) error {
+	defer res.Body.Close()
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
+	return json.NewDecoder(res.Body).Decode(target)
+}
+
 // GetSessions fetches all sessions from the server.
 func (c *Client) GetSessions() ([]models.Session, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/session", c.BaseURL), nil)
+	res, err := c.doRequest("GET", "/session", nil, nil)
 	if err != nil {
 		return nil, err
 	}
+	var sessions []models.Session
+	err = decodeResponse(res, &sessions)
+	return sessions, err
+}
 
-	res, err := c.HTTPClient.Do(req)
+// GetSession fetches a single session by its ID.
+func (c *Client) GetSession(id string) (*models.Session, error) {
+	res, err := c.doRequest("GET", fmt.Sprintf("/session/%s", id), nil, nil)
 	if err != nil {
 		return nil, err
+	}
+	var session models.Session
+	err = decodeResponse(res, &session)
+	return &session, err
+}
+
+// CreateSession creates a new session.
+func (c *Client) CreateSession(title string) (*models.Session, error) {
+	body := map[string]string{"title": title}
+	res, err := c.doRequest("POST", "/session", nil, body)
+	if err != nil {
+		return nil, err
+	}
+	var session models.Session
+	err = decodeResponse(res, &session)
+	return &session, err
+}
+
+// UpdateSession updates a session's title.
+func (c *Client) UpdateSession(id, title string) (*models.Session, error) {
+	body := map[string]string{"title": title}
+	res, err := c.doRequest("PATCH", fmt.Sprintf("/session/%s", id), nil, body)
+	if err != nil {
+		return nil, err
+	}
+	var session models.Session
+	err = decodeResponse(res, &session)
+	return &session, err
+}
+
+// DeleteSession deletes a session by its ID.
+func (c *Client) DeleteSession(id string) error {
+	res, err := c.doRequest("DELETE", fmt.Sprintf("/session/%s", id), nil, nil)
+	if err != nil {
+		return err
 	}
 	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	if res.StatusCode != http.StatusOK && res.StatusCode != http.StatusNoContent {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
 	}
+	return nil
+}
 
-	var sessions []models.Session
-	if err := json.NewDecoder(res.Body).Decode(&sessions); err != nil {
+// GetMessages fetches all messages for a given session.
+func (c *Client) GetMessages(sessionID string) ([]models.MessageWithParts, error) {
+	res, err := c.doRequest("GET", fmt.Sprintf("/session/%s/message", sessionID), nil, nil)
+	if err != nil {
 		return nil, err
 	}
+	var messages []models.MessageWithParts
+	err = decodeResponse(res, &messages)
+	return messages, err
+}
 
-	return sessions, nil
+// SendMessage sends a new message to a session.
+func (c *Client) SendMessage(sessionID string, req *models.ChatInput) (*models.MessageWithParts, error) {
+	res, err := c.doRequest("POST", fmt.Sprintf("/session/%s/message", sessionID), nil, req)
+	if err != nil {
+		return nil, err
+	}
+	var message models.MessageWithParts
+	err = decodeResponse(res, &message)
+	return &message, err
 }
 
 // GetConfig fetches the server configuration.
 func (c *Client) GetConfig() (*models.ServerConfig, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/config", c.BaseURL), nil)
+	res, err := c.doRequest("GET", "/config", nil, nil)
 	if err != nil {
 		return nil, err
 	}
-
-	res, err := c.HTTPClient.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-
-	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)
-	}
-
 	var config models.ServerConfig
-	if err := json.NewDecoder(res.Body).Decode(&config); err != nil {
+	err = decodeResponse(res, &config)
+	return &config, err
+}
+
+// FindInFiles searches for a pattern in files.
+func (c *Client) FindInFiles(pattern string) ([]models.SearchResult, error) {
+	query := url.Values{}
+	query.Add("pattern", pattern)
+	res, err := c.doRequest("GET", "/find", query, nil)
+	if err != nil {
 		return nil, err
 	}
+	var results []models.SearchResult
+	err = decodeResponse(res, &results)
+	return results, err
+}
 
-	return &config, nil
+// FindFiles finds files by a query.
+func (c *Client) FindFiles(queryStr string) ([]string, error) {
+	query := url.Values{}
+	query.Add("query", queryStr)
+	res, err := c.doRequest("GET", "/find/file", query, nil)
+	if err != nil {
+		return nil, err
+	}
+	var files []string
+	err = decodeResponse(res, &files)
+	return files, err
+}
+
+// FindSymbols finds symbols by a query.
+func (c *Client) FindSymbols(queryStr string) ([]models.Symbol, error) {
+	query := url.Values{}
+	query.Add("query", queryStr)
+	res, err := c.doRequest("GET", "/find/symbol", query, nil)
+	if err != nil {
+		return nil, err
+	}
+	var symbols []models.Symbol
+	err = decodeResponse(res, &symbols)
+	return symbols, err
+}
+
+// ReadFile reads the content of a file.
+func (c *Client) ReadFile(path string) (*models.FileContent, error) {
+	query := url.Values{}
+	query.Add("path", path)
+	res, err := c.doRequest("GET", "/file/content", query, nil)
+	if err != nil {
+		return nil, err
+	}
+	var content models.FileContent
+	err = decodeResponse(res, &content)
+	return &content, err
 }

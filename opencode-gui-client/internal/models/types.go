@@ -5,25 +5,34 @@ type AppInfo struct {
 	// Define fields based on GET /app response
 }
 
+// SearchResultPath defines the path of a search result.
+type SearchResultPath struct {
+	Text string `json:"text"`
+}
+
+// SearchResultLines defines the lines of a search result.
+type SearchResultLines struct {
+	Text string `json:"text"`
+}
+
 // SearchResult defines the structure for a search result.
 type SearchResult struct {
-	Path struct {
-		Text string `json:"text"`
-	} `json:"path"`
-	Lines struct {
-		Text string `json:"text"`
-	} `json:"lines"`
-	LineNumber int `json:"line_number"`
+	Path       SearchResultPath  `json:"path"`
+	Lines      SearchResultLines `json:"lines"`
+	LineNumber int               `json:"line_number"`
+}
+
+// SymbolLocation defines the location of a symbol.
+type SymbolLocation struct {
+	URI   string `json:"uri"`
+	Range Range  `json:"range"`
 }
 
 // Symbol defines the structure for a symbol.
 type Symbol struct {
-	Name     string `json:"name"`
-	Kind     string `json:"kind"`
-	Location struct {
-		URI   string `json:"uri"`
-		Range Range  `json:"range"`
-	} `json:"location"`
+	Name     string         `json:"name"`
+	Kind     string         `json:"kind"`
+	Location SymbolLocation `json:"location"`
 }
 
 // Range defines the structure for a range.
