@@ -1,15 +1,15 @@
 export namespace models {
-
+	
 	export class AgentConfig {
 	    model?: string;
 	    temperature?: number;
 	    prompt?: string;
 	    tools?: Record<string, boolean>;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new AgentConfig(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.model = source["model"];
@@ -24,11 +24,11 @@ export namespace models {
 	    agent?: Record<string, AgentConfig>;
 	    provider?: Record<string, any>;
 	    keybinds?: any;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new ServerConfig(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.theme = source["theme"];
@@ -37,7 +37,7 @@ export namespace models {
 	        this.provider = source["provider"];
 	        this.keybinds = source["keybinds"];
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -58,11 +58,11 @@ export namespace models {
 	}
 	export class Share {
 	    url: string;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new Share(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.url = source["url"];
@@ -71,11 +71,11 @@ export namespace models {
 	export class Time {
 	    created: number;
 	    updated: number;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new Time(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.created = source["created"];
@@ -89,11 +89,11 @@ export namespace models {
 	    parentID?: string;
 	    time: Time;
 	    share?: Share;
-
+	
 	    static createFrom(source: any = {}) {
 	        return new Session(source);
 	    }
-
+	
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
@@ -103,7 +103,7 @@ export namespace models {
 	        this.time = this.convertValues(source["time"], Time);
 	        this.share = this.convertValues(source["share"], Share);
 	    }
-
+	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
 		    if (!a) {
 		        return a;
@@ -122,6 +122,7 @@ export namespace models {
 		    return a;
 		}
 	}
-
+	
 
 }
+

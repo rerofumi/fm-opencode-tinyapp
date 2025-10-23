@@ -4,5 +4,29 @@ nodejs = "22"
 wails = "latest"
 
 [env]
+PATH = "{{cwd}}/opencode-gui-client/node_modules/.bin:$PATH"
 
-[task]
+[tasks.dev]
+description = "Start wails development server"
+dir = "opencode-gui-client"
+run = "wails dev"
+
+[tasks.build]
+description = "Build wails application"
+dir = "opencode-gui-client"
+run = "wails build"
+
+[tasks.frontend-install]
+description = "Install frontend dependencies"
+dir = "opencode-gui-client/frontend"
+run = "npm install"
+
+[tasks.frontend-build]
+description = "Build frontend"
+dir = "opencode-gui-client/frontend"
+run = "npm run build"
+
+[tasks.frontend-dev]
+description = "Start frontend dev server"
+dir = "opencode-gui-client/frontend"
+run = "npm run dev"
