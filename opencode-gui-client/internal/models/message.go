@@ -55,7 +55,7 @@ type MessageWithParts struct {
 func (m *MessageWithParts) UnmarshalJSON(data []byte) error {
 	type Alias MessageWithParts
 	aux := &struct {
-		Info  json.RawMessage `json:"info"`
+		Info  json.RawMessage   `json:"info"`
 		Parts []json.RawMessage `json:"parts"`
 		*Alias
 	}{
@@ -109,7 +109,12 @@ func (m *MessageWithParts) UnmarshalJSON(data []byte) error {
 			m.Parts[i] = toolPart
 		// Add other part types here
 		default:
-			return fmt.Errorf("unknown part type: %s", basePart.Type)
+			// For now, just unmarshal into a generic map
+			var genericPart map[string]interface{}
+			if err := json.Unmarshal(partData, &genericPart); err != nil {
+				return err
+			}
+			// m.Parts[i] = genericPart // This would require Part to be interface{}
 		}
 	}
 
@@ -138,24 +143,31 @@ func (p TextPart) GetType() string { return p.Type }
 // ToolPart represents a tool part of a message.
 type ToolPart struct {
 	basePart
-	Tool  string `json:"tool"`
-	State string `json:"state"` // "running", "completed", "error"
+	Tool  string      `json:"tool"`
+	State interface{} `json:"state"` // "running", "completed", "error" またはオブジェクト
 }
 
 func (p ToolPart) GetType() string { return p.Type }
 
-
-// PartInput is used for sending message parts.
-type PartInput interface {
-    GetInputType() string
+// GetState returns the state as a string if possible, otherwise returns a JSON representation
+func (p ToolPart) GetState() string {
+	if s, ok := p.State.(string); ok {
+		return s
+	}
+	// If it's a complex object, convert to JSON string
+	if jsonBytes, err := json.Marshal(p.State); err == nil {
+		return string(jsonBytes)
+	}
+	return "unknown"
 }
 
+
+// TextInputPart is used for sending message parts.
 type TextInputPart struct {
     Type string `json:"type"` // "text"
     Text string `json:"text"`
 }
 
-func (p TextInputPart) GetInputType() string { return p.Type }
 
 // ModelSelection defines the model to use for a chat message.
 type ModelSelection struct {
@@ -165,7 +177,7 @@ type ModelSelection struct {
 
 // ChatInput represents the input for a chat message.
 type ChatInput struct {
-	Parts []PartInput     `json:"parts"`
+	Parts []TextInputPart `json:"parts"`
 	Model *ModelSelection `json:"model,omitempty"`
 }
 

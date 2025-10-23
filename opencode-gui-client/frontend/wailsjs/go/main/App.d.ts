@@ -12,9 +12,13 @@ export function FindInFiles(arg1:string):Promise<Array<models.SearchResult>>;
 
 export function FindSymbols(arg1:string):Promise<Array<models.Symbol>>;
 
+export function GetAppConfig():Promise<models.AppConfig>;
+
 export function GetConfig():Promise<models.ServerConfig>;
 
 export function GetMessages(arg1:string):Promise<Array<models.MessageWithParts>>;
+
+export function GetProviders():Promise<models.ProvidersResponse>;
 
 export function GetSession(arg1:string):Promise<models.Session>;
 
@@ -23,5 +27,7 @@ export function GetSessions():Promise<Array<models.Session>>;
 export function ReadFile(arg1:string):Promise<models.FileContent>;
 
 export function SendMessage(arg1:string,arg2:models.ChatInput):Promise<models.MessageWithParts>;
+
+export function UpdateAppConfig(arg1:models.AppConfig):Promise<void>;
 
 export function UpdateSession(arg1:string,arg2:string):Promise<models.Session>;

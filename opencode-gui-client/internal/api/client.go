@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
 	"opencode-gui-client/internal/models"
@@ -49,15 +50,22 @@ func (c *Client) doRequest(method, path string, query url.Values, body interface
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	return c.HTTPClient.Do(req)
+	res, err := c.HTTPClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
 }
 
 // decodeResponse is a helper function to decode JSON responses.
 func decodeResponse(res *http.Response, target interface{}) error {
 	defer res.Body.Close()
 	if res.StatusCode < 200 || res.StatusCode >= 300 {
-		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+		body, _ := io.ReadAll(res.Body) // エラーレスポンスのボディを読み取る
+		return fmt.Errorf("unexpected status code: %d, response body: %s", res.StatusCode, string(body))
 	}
+	
 	return json.NewDecoder(res.Body).Decode(target)
 }
 
@@ -203,4 +211,15 @@ func (c *Client) ReadFile(path string) (*models.FileContent, error) {
 	var content models.FileContent
 	err = decodeResponse(res, &content)
 	return &content, err
+}
+
+// GetProviders fetches the list of available providers and models.
+func (c *Client) GetProviders() (*models.ProvidersResponse, error) {
+	res, err := c.doRequest("GET", "/config/providers", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var providersResponse models.ProvidersResponse
+	err = decodeResponse(res, &providersResponse)
+	return &providersResponse, err
 }

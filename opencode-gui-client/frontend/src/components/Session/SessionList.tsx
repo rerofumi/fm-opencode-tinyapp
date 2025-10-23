@@ -1,5 +1,5 @@
 import React from 'react';
-import { models } from '../../types';
+import { models } from '../../../wailsjs/go/models';
 
 interface SessionListProps {
     sessions: models.Session[];
@@ -18,16 +18,27 @@ export const SessionList: React.FC<SessionListProps> = ({
 }) => {
     return (
         <div className="session-list">
-            <button onClick={onSessionCreate}>New Session</button>
+            <div className="session-list-header">
+                <h3>Sessions</h3>
+                <button onClick={onSessionCreate} title="New Session (Ctrl+N)">+</button>
+            </div>
             <ul>
                 {sessions.map((session) => (
                     <li
                         key={session.id}
-                        className={currentSessionId === session.id ? 'active' : ''}
+                        className={`session-item ${currentSessionId === session.id ? 'active' : ''}`}
                         onClick={() => onSessionSelect(session.id)}
                     >
-                        {session.title || 'Untitled Session'}
-                        <button onClick={() => onSessionDelete(session.id)}>X</button>
+                        <span className="session-title">{session.title || 'Untitled Session'}</span>
+                        <button
+                            className="delete-session-btn"
+                            onClick={(e) => {
+                                e.stopPropagation(); // Prevent li's onClick from firing
+                                onSessionDelete(session.id);
+                            }}
+                        >
+                            ×
+                        </button>
                     </li>
                 ))}
             </ul>

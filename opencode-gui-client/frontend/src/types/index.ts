@@ -21,4 +21,40 @@ export namespace models {
         model?: string;
         // Other fields are omitted for brevity.
     }
+
+    // Message and Part types
+    export interface Message {
+        id: string;
+        sessionID: string;
+        role: 'user' | 'assistant';
+        time: {
+            created: number;
+            completed?: number;
+        };
+        modelID?: string;
+        providerID?: string;
+    }
+
+    export interface MessageWithParts {
+        info: Message;
+        parts: Part[];
+    }
+
+    export type Part = TextPart | ToolPart | any; // Allow for other part types
+
+    export interface BasePart {
+        id: string;
+        type: string;
+    }
+
+    export interface TextPart extends BasePart {
+        type: 'text';
+        text: string;
+    }
+
+    export interface ToolPart extends BasePart {
+        type: 'tool';
+        tool: string;
+        state: any; // Can be string or object
+    }
 }

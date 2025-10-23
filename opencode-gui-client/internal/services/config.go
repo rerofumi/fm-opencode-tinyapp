@@ -19,3 +19,8 @@ func NewConfigService(apiClient *api.Client) *ConfigService {
 func (s *ConfigService) GetConfig() (*models.ServerConfig, error) {
 	return s.apiClient.GetConfig()
 }
+
+// GetProviders retrieves the list of available providers and models.
+func (s *ConfigService) GetProviders() (*models.ProvidersResponse, error) {
+	return s.apiClient.GetProviders()
+}

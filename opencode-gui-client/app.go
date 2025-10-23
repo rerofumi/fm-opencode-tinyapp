@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"log"
 	"opencode-gui-client/internal/api"
 	"opencode-gui-client/internal/models"
 	"opencode-gui-client/internal/services"
@@ -9,11 +10,12 @@ import (
 
 // App struct holds the application's state and services.
 type App struct {
-	ctx            context.Context
-	sessionService *services.SessionService
-	messageService *services.MessageService
-	configService  *services.ConfigService
-	fileService    *services.FileService
+	ctx              context.Context
+	sessionService   *services.SessionService
+	messageService   *services.MessageService
+	configService    *services.ConfigService
+	fileService      *services.FileService
+	appConfigService *services.AppConfigService
 }
 
 // NewApp creates a new App application struct
@@ -25,8 +27,22 @@ func NewApp() *App {
 // and services are initialized.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
-	// This should be configurable later.
-	apiClient := api.NewClient("http://localhost:8080")
+
+	// Initialize the app config service first
+	appConfigService, err := services.NewAppConfigService()
+	if err != nil {
+		log.Fatalf("Failed to initialize app config service: %v", err)
+	}
+	a.appConfigService = appConfigService
+
+	// Load the config to get the server URL
+	appConfig, err := a.appConfigService.GetAppConfig()
+	if err != nil {
+		log.Fatalf("Failed to load app config: %v", err)
+	}
+
+	// Initialize API client with the loaded URL
+	apiClient := api.NewClient(appConfig.ServerURL)
 
 	a.sessionService = services.NewSessionService(apiClient)
 	a.messageService = services.NewMessageService(apiClient)
@@ -34,11 +50,29 @@ func (a *App) startup(ctx context.Context) {
 	a.fileService = services.NewFileService(apiClient)
 }
 
-// === 設定関連 ===
+// === アプリケーション設定関連 ===
+
+// GetAppConfig returns the local application configuration.
+func (a *App) GetAppConfig() (*models.AppConfig, error) {
+	return a.appConfigService.GetAppConfig()
+}
+
+// UpdateAppConfig updates the local application configuration.
+func (a *App) UpdateAppConfig(config *models.AppConfig) error {
+	return a.appConfigService.UpdateAppConfig(config)
+}
+
+
+// === サーバー設定関連 ===
 
 // GetConfig returns the server configuration.
 func (a *App) GetConfig() (*models.ServerConfig, error) {
 	return a.configService.GetConfig()
+}
+
+// GetProviders returns the list of available providers and models.
+func (a *App) GetProviders() (*models.ProvidersResponse, error) {
+	return a.configService.GetProviders()
 }
 
 // === セッション関連 ===
