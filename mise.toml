@@ -1,0 +1,8 @@
+[tools]
+golang = "latest"
+nodejs = "22"
+wails = "latest"
+
+[env]
+
+[task]
