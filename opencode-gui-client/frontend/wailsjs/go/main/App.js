@@ -22,6 +22,10 @@ export function FindSymbols(arg1) {
   return window['go']['main']['App']['FindSymbols'](arg1);
 }
 
+export function GetAppConfig() {
+  return window['go']['main']['App']['GetAppConfig']();
+}
+
 export function GetConfig() {
   return window['go']['main']['App']['GetConfig']();
 }
@@ -44,6 +48,10 @@ export function ReadFile(arg1) {
 
 export function SendMessage(arg1, arg2) {
   return window['go']['main']['App']['SendMessage'](arg1, arg2);
+}
+
+export function UpdateAppConfig(arg1) {
+  return window['go']['main']['App']['UpdateAppConfig'](arg1);
 }
 
 export function UpdateSession(arg1, arg2) {

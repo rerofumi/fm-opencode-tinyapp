@@ -55,7 +55,7 @@ type MessageWithParts struct {
 func (m *MessageWithParts) UnmarshalJSON(data []byte) error {
 	type Alias MessageWithParts
 	aux := &struct {
-		Info  json.RawMessage `json:"info"`
+		Info  json.RawMessage   `json:"info"`
 		Parts []json.RawMessage `json:"parts"`
 		*Alias
 	}{
@@ -109,7 +109,12 @@ func (m *MessageWithParts) UnmarshalJSON(data []byte) error {
 			m.Parts[i] = toolPart
 		// Add other part types here
 		default:
-			return fmt.Errorf("unknown part type: %s", basePart.Type)
+			// For now, just unmarshal into a generic map
+			var genericPart map[string]interface{}
+			if err := json.Unmarshal(partData, &genericPart); err != nil {
+				return err
+			}
+			// m.Parts[i] = genericPart // This would require Part to be interface{}
 		}
 	}
 
@@ -145,17 +150,12 @@ type ToolPart struct {
 func (p ToolPart) GetType() string { return p.Type }
 
 
-// PartInput is used for sending message parts.
-type PartInput interface {
-    GetInputType() string
-}
-
+// TextInputPart is used for sending message parts.
 type TextInputPart struct {
     Type string `json:"type"` // "text"
     Text string `json:"text"`
 }
 
-func (p TextInputPart) GetInputType() string { return p.Type }
 
 // ModelSelection defines the model to use for a chat message.
 type ModelSelection struct {
@@ -165,7 +165,7 @@ type ModelSelection struct {
 
 // ChatInput represents the input for a chat message.
 type ChatInput struct {
-	Parts []PartInput     `json:"parts"`
+	Parts []TextInputPart `json:"parts"`
 	Model *ModelSelection `json:"model,omitempty"`
 }
 

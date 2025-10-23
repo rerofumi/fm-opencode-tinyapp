@@ -18,6 +18,18 @@ export namespace models {
 	        this.tools = source["tools"];
 	    }
 	}
+	export class AppConfig {
+	    serverURL: string;
+
+	    static createFrom(source: any = {}) {
+	        return new AppConfig(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.serverURL = source["serverURL"];
+	    }
+	}
 	export class ModelSelection {
 	    providerID: string;
 	    modelID: string;
@@ -32,8 +44,22 @@ export namespace models {
 	        this.modelID = source["modelID"];
 	    }
 	}
+	export class TextInputPart {
+	    type: string;
+	    text: string;
+
+	    static createFrom(source: any = {}) {
+	        return new TextInputPart(source);
+	    }
+
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.type = source["type"];
+	        this.text = source["text"];
+	    }
+	}
 	export class ChatInput {
-	    parts: any[];
+	    parts: TextInputPart[];
 	    model?: ModelSelection;
 
 	    static createFrom(source: any = {}) {
@@ -42,7 +68,7 @@ export namespace models {
 
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
-	        this.parts = source["parts"];
+	        this.parts = this.convertValues(source["parts"], TextInputPart);
 	        this.model = this.convertValues(source["model"], ModelSelection);
 	    }
 
@@ -372,6 +398,7 @@ export namespace models {
 		    return a;
 		}
 	}
+
 
 
 }

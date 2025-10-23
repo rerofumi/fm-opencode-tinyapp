@@ -1,30 +1,76 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SessionList } from './components/Session/SessionList';
 import { ChatPanel } from './components/Chat/ChatPanel';
 import { Settings } from './components/Settings/Settings';
-import { GetSessions } from '../wailsjs/go/main/App';
-import { models } from './types';
+import { GetSessions, CreateSession, DeleteSession } from '../wailsjs/go/main/App';
+import { models } from '../wailsjs/go/models';
 import './App.css';
 
 function App() {
     const [sessions, setSessions] = useState<models.Session[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [showSettings, setShowSettings] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        // Fetch sessions on component mount
-        GetSessions().then(setSessions).catch(console.error);
+    const loadSessions = useCallback(() => {
+        GetSessions()
+            .then(setSessions)
+            .catch(err => setError(`Failed to load sessions: ${err}`));
     }, []);
 
-    const handleSessionCreate = () => {
-        // Placeholder for creating a new session
-        console.log('Creating new session');
+    useEffect(() => {
+        loadSessions();
+    }, [loadSessions]);
+
+    const handleSessionCreate = useCallback(() => {
+        CreateSession("New Session")
+            .then((newSession) => {
+                loadSessions(); // Reload sessions after creating a new one
+                setCurrentSessionId(newSession.id);
+            })
+            .catch(err => setError(`Failed to create session: ${err}`));
+    }, [loadSessions]);
+
+    const handleSessionDelete = useCallback((id: string) => {
+        if (window.confirm('Are you sure you want to delete this session?')) {
+            DeleteSession(id)
+                .then(() => {
+                    loadSessions(); // Reload sessions
+                    if (currentSessionId === id) {
+                        setCurrentSessionId(null);
+                    }
+                })
+                .catch(err => setError(`Failed to delete session: ${err}`));
+        }
+    }, [currentSessionId, loadSessions]);
+
+    const handleSessionSelect = (id: string) => {
+        setCurrentSessionId(id);
     };
 
-    const handleSessionDelete = (id: string) => {
-        // Placeholder for deleting a session
-        console.log(`Deleting session ${id}`);
-    };
+    // Keyboard shortcuts
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.ctrlKey) {
+                switch (e.key) {
+                    case 'n':
+                        e.preventDefault();
+                        handleSessionCreate();
+                        break;
+                    case ',':
+                        e.preventDefault();
+                        setShowSettings(true);
+                        break;
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [handleSessionCreate]);
+
 
     return (
         <div id="App">
@@ -32,7 +78,7 @@ function App() {
                 <SessionList
                     sessions={sessions}
                     currentSessionId={currentSessionId}
-                    onSessionSelect={setCurrentSessionId}
+                    onSessionSelect={handleSessionSelect}
                     onSessionCreate={handleSessionCreate}
                     onSessionDelete={handleSessionDelete}
                 />
@@ -41,7 +87,11 @@ function App() {
                 <ChatPanel sessionId={currentSessionId} />
             </div>
             <div className="statusbar">
-                <button onClick={() => setShowSettings(true)}>Settings</button>
+                {error && <div className="error-message">{error}</div>}
+                <div className="status-info">
+                    <span>{sessions.length} sessions</span>
+                </div>
+                <button onClick={() => setShowSettings(true)} title="Settings (Ctrl+,)">⚙️</button>
             </div>
             {showSettings && <Settings onClose={() => setShowSettings(false)} />}
         </div>
