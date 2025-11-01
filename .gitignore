@@ -21,11 +21,11 @@ go.work
 go.sum
 
 # Wails build artifacts
-build/
+build/*
+!build/appicon.png
 dist/
 bin/
 wails.json~
-!build/appicon.png
 
 # Frontend build artifacts
 frontend/dist/
