@@ -46,6 +46,10 @@ export function GetSessions() {
   return window['go']['main']['App']['GetSessions']();
 }
 
+export function PolishText(arg1) {
+  return window['go']['main']['App']['PolishText'](arg1);
+}
+
 export function ReadFile(arg1) {
   return window['go']['main']['App']['ReadFile'](arg1);
 }

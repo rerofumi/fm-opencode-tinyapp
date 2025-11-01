@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GetMessages, SendMessage } from '../../../wailsjs/go/main/App';
+import { GetMessages, SendMessage, PolishText } from '../../../wailsjs/go/main/App';
 import { models } from '../../../wailsjs/go/models';
 // Wails の自動生成型には Event や TextPart は含まれないため、フロント側でイベント型を定義します。
 type ServerEvent = {
@@ -22,6 +22,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
     const [messages, setMessages] = useState<models.MessageWithParts[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [isPolishing, setIsPolishing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -189,6 +190,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         }
     };
 
+    const handlePolishText = async () => {
+        if (!inputValue.trim()) {
+            setError('Please enter some text to polish');
+            return;
+        }
+
+        setIsPolishing(true);
+        setError(null);
+
+        try {
+            const polishedText = await PolishText(inputValue);
+            setInputValue(polishedText);
+        } catch (err) {
+            setError(`Failed to polish text: ${err}`);
+        } finally {
+            setIsPolishing(false);
+        }
+    };
+
     if (!sessionId) {
         return <div className="chat-panel centered">Select a session to start chatting</div>;
     }
@@ -230,15 +250,25 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     onChange={e => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message... (Ctrl+Enter to send)"
-                    disabled={isLoading}
+                    disabled={isLoading || isPolishing}
                 />
-                <button 
-                    className="send-button" 
-                    onClick={handleSendMessage}
-                    disabled={isLoading || !inputValue.trim()}
-                >
-                    Send
-                </button>
+                <div className="input-actions">
+                    <button 
+                        className="polish-button" 
+                        onClick={handlePolishText}
+                        disabled={isLoading || isPolishing || !inputValue.trim()}
+                        title="Polish text using LLM"
+                    >
+                        {isPolishing ? 'Polishing...' : 'LLM Polish'}
+                    </button>
+                    <button 
+                        className="send-button" 
+                        onClick={handleSendMessage}
+                        disabled={isLoading || isPolishing || !inputValue.trim()}
+                    >
+                        Send
+                    </button>
+                </div>
             </div>
         </div>
     );

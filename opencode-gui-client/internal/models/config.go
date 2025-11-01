@@ -3,6 +3,16 @@ package models
 // AppConfig defines the structure for the application's local configuration.
 type AppConfig struct {
 	ServerURL string `json:"serverURL"`
+	LLM       LLMConfig `json:"llm,omitempty"`
+}
+
+// LLMConfig defines the structure for LLM configuration.
+type LLMConfig struct {
+	Provider  string `json:"provider,omitempty"`
+	BaseURL   string `json:"baseURL,omitempty"`
+	APIKey    string `json:"apiKey,omitempty"`
+	Model     string `json:"model,omitempty"`
+	Prompt    string `json:"prompt,omitempty"`
 }
 
 // ServerConfig defines the structure for the server's configuration.
@@ -46,4 +56,16 @@ type Model struct {
 		Context int `json:"context"`
 		Output  int `json:"output"`
 	} `json:"limit"`
+}
+
+// PolishTextRequest represents a request to polish text.
+type PolishTextRequest struct {
+	Text   string `json:"text"`
+	Prompt string `json:"prompt"`
+	Model  string `json:"model"`
+}
+
+// PolishTextResponse represents a response from polishing text.
+type PolishTextResponse struct {
+	PolishedText string `json:"polishedText"`
 }

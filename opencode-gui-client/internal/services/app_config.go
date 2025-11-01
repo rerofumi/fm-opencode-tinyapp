@@ -26,7 +26,19 @@ func NewAppConfigService() (*AppConfigService, error) {
 
 	// Create a default config file if it doesn't exist
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
-		defaultConfig := &models.AppConfig{ServerURL: "http://localhost:23450"}
+		defaultConfig := &models.AppConfig{
+			ServerURL: "http://localhost:23450",
+			LLM: models.LLMConfig{
+				Provider: "OpenAI API互換",
+				BaseURL:  "https://api.openai.com/v1",
+				Model:    "gpt-4o",
+				Prompt: `以下の文章をより自然で分かりやすく、丁寧な表現に修正してください。
+誤字脱字や文法的な誤りも修正してください。
+修正後の文書のみ出力し、返答などは不要です。
+---
+{修正したいテキストを入力してください}`,
+			},
+		}
 		data, marshalErr := json.MarshalIndent(defaultConfig, "", "  ")
 		if marshalErr != nil {
 			return nil, marshalErr

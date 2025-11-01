@@ -24,6 +24,8 @@ export function GetSession(arg1:string):Promise<models.Session>;
 
 export function GetSessions():Promise<Array<models.Session>>;
 
+export function PolishText(arg1:string):Promise<string>;
+
 export function ReadFile(arg1:string):Promise<models.FileContent>;
 
 export function SendMessage(arg1:string,arg2:models.ChatInput):Promise<models.MessageWithParts>;

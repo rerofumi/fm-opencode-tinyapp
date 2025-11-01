@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"opencode-gui-client/internal/api"
 	"opencode-gui-client/internal/models"
@@ -20,6 +21,7 @@ type App struct {
 	fileService      *services.FileService
 	appConfigService *services.AppConfigService
 	streamClient     *api.StreamClient
+	llmClient        *api.LLMClient
 	logger           *logrus.Logger
 }
 
@@ -54,6 +56,11 @@ func (a *App) startup(ctx context.Context) {
 	// Initialize API client with the loaded URL
 	apiClient := api.NewClient(appConfig.ServerURL)
 	a.streamClient = api.NewStreamClient(appConfig.ServerURL, a.logger)
+
+	// Initialize LLM client
+	if appConfig.LLM.BaseURL != "" && appConfig.LLM.APIKey != "" {
+		a.llmClient = api.NewLLMClient(appConfig.LLM.BaseURL, appConfig.LLM.APIKey)
+	}
 
 	a.sessionService = services.NewSessionService(apiClient)
 	a.messageService = services.NewMessageService(apiClient)
@@ -178,4 +185,32 @@ func (a *App) FindSymbols(query string) ([]models.Symbol, error) {
 // ReadFile reads the content of a file.
 func (a *App) ReadFile(path string) (*models.FileContent, error) {
 	return a.fileService.ReadFile(path)
+}
+
+// === LLM関連 ===
+
+// PolishText polishes the given text using LLM.
+func (a *App) PolishText(text string) (string, error) {
+	if a.llmClient == nil {
+		return "", fmt.Errorf("LLM client not initialized")
+	}
+
+	// Get app config to get LLM settings
+	appConfig, err := a.appConfigService.GetAppConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to get app config: %w", err)
+	}
+
+	req := &models.PolishTextRequest{
+		Text:   text,
+		Prompt: appConfig.LLM.Prompt,
+		Model:  appConfig.LLM.Model,
+	}
+
+	resp, err := a.llmClient.PolishText(req)
+	if err != nil {
+		return "", fmt.Errorf("failed to polish text: %w", err)
+	}
+
+	return resp.PolishedText, nil
 }

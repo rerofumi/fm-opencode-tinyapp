@@ -239,6 +239,7 @@ body, html {
     padding: 8px;
     border-top: 1px solid var(--border-color);
     display: flex;
+    flex-direction: column;
     gap: 8px;
 }
 
@@ -254,14 +255,38 @@ body, html {
     height: 80px;
 }
 
+.input-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
 .send-button {
-    align-self: flex-end;
     padding: 8px 16px;
     background-color: var(--button-bg);
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 4px;
     cursor: pointer;
+}
+
+.send-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.polish-button {
+    padding: 8px 16px;
+    background-color: #5a7d5a;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.polish-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 
 .send-button:disabled {
@@ -287,8 +312,33 @@ body, html {
     background-color: var(--background-color);
     padding: 20px;
     border-radius: 8px;
-    width: 500px;
+    width: 600px;
     border: 1px solid var(--border-color);
+}
+
+.tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tabs button {
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+}
+
+.tabs button.active {
+    border-bottom-color: var(--button-bg);
+    font-weight: bold;
+}
+
+.tab-content {
+    margin-bottom: 20px;
 }
 
 .form-group {
@@ -300,7 +350,8 @@ body, html {
     margin-bottom: 8px;
 }
 
-.form-group input {
+.form-group input,
+.form-group textarea {
     width: 100%;
     padding: 8px;
     box-sizing: border-box;
@@ -308,6 +359,11 @@ body, html {
     color: var(--text-color);
     border: 1px solid var(--border-color);
     border-radius: 4px;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
 }
 
 .modal-actions {
