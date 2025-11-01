@@ -1,5 +1,9 @@
 # fm-opencode-tinyapp
 
+<p align="center">
+  <img src="docs/screenshot_1.png" alt="app image" width="100%" />
+</p>
+
 サーバーモードの OpenCode に対しリクエストを送信し操作するための GUI インタフェース。
 
 ターミナル+CLI 環境で非 ASCII 文字（日本語など）を入力すると画面が崩れたりログがたどれなかったりする問題を解決するため、テキスト入力を容易にする GUI サポートツール。
@@ -9,10 +13,8 @@
 ## 機能
 
 - OpenCode Server への API 接続と GUI 操作
-- ストリーミング応答によるリアルタイムチャット
 - セッション管理（作成・切替・削除）
 - モデル選択（プロバイダー別にグループ化）
-- ファイル操作（検索・シンボル検索・ファイル読み込み）
 - LLM を利用した文章校正機能
 - マークダウンレンダリングとコードシンタックスハイライト
 
@@ -43,11 +45,8 @@
 # 必要なツールをインストール
 mise install
 
-# Wails CLI をインストール
-go install github.com/wailsapp/wails/v2/cmd/wails@latest
-
 # 環境を確認
-wails doctor
+mise exec -- wails doctor
 ```
 
 ### 手動セットアップ
@@ -69,11 +68,7 @@ wails doctor
 
 ### 開発モード
 
-```bash
-wails dev
-```
-
-または mise タスクを使用:
+mise タスクを使用:
 
 ```bash
 mise run dev
@@ -82,12 +77,18 @@ mise run dev
 ### 本番ビルド
 
 ```bash
-wails build
+mise run build
 ```
 
 ビルド成果物は `build/bin/` に生成されます。
 
 ## 使い方
+
+opencode は作業するディレクトリでサーバーモードで起動しておきます。
+
+```bash
+opencode serve --port (任意)
+```
 
 ### 1. OpenCode Server への接続設定
 
@@ -97,6 +98,7 @@ wails build
    - **Server URL**: OpenCode Server のアドレス（例: `http://localhost:8000`）
    - **Provider/Model**: 使用するモデルを選択
    - (オプション) **LLM 設定**: 文章校正用の LLM API 設定（Base URL, API Key, Model, Prompt）
+4. 設定後に再起動することで有効になる
 
 ### 2. 基本操作
 
@@ -114,6 +116,56 @@ wails build
 | `Ctrl+N` | 新規セッション作成 |
 | `Ctrl+,` | 設定画面を開く |
 | `Escape` | 入力キャンセル |
+
+### 4. LLM polish/入力文章校正機能について
+
+設定で OpenAI API 互換の LLM API key を設定することで、入力中の文章を整形、変換、翻訳させることができます。
+
+当アプリは入力支援をするものですので、入力サポートの一環として付いているオプション機能となります。
+API key を設定しなければ動作しないだけですので、利用は任意です。
+
+#### 設定プロンプトについて
+
+プロンプト設定に `{text}` と書くとそこに入力中の文章が埋め込まれます。
+
+1. 文章校正プロンプト
+
+```
+下の文章をより自然で分かりやすく、丁寧な表現に修正してください。
+誤字脱字や文法的な誤りも修正してください。
+修正後の文書のみ出力し、返答などは不要です。
+---
+{text}
+```
+
+2. 半角ローマ字英文混在表記の日本語変換プロンプト
+
+```
+あなたは、ローマ字と英語が混在したテキストを自然な日本語に変換する高度な日本語入力システムです。以下のルールに厳密に従ってください。
+1.  入力テキストに含まれるローマ字の部分を、文脈に最も適した日本語（ひらがな、カタカナ、漢字）に変換します。
+2.  入力テキストに含まれる英単語や英文は、そのまま英語として残します。大文字・小文字も維持してください。
+3.  ローマ字入力の多少のタイプミスやスペルミスは、文脈から正しい日本語を推測して自動で修正してください。
+4.  変換結果以外の余計な説明、前置き、後書きは一切含めず、変換後の日本語の文章のみを出力してください。
+5.  入力が空の場合は、何も出力しないでください。
+---
+{text}
+```
+
+[rerofumi/fm-japanese-input](https://github.com/rerofumi/fm-japanese-input) と同じ効果を持たせることができるようになります。
+全角入力モードに切り替えることなくアルファベット入力だけでアルファベットと日本語混在文での指示が入力できるようになります。
+
+<p align="center">
+  <img src="docs/screenshot_2.png" alt="LLM polish demo" width="100%" />
+</p>
+
+
+### 5. 設定ファイルについて
+
+- 設定ファイルは config dir の `opencode-gui-client/config.json` に保存されます
+  - Windows の場合 `%USERPROFILE%\AppData\Roaming\opencode-gui-client\config.json`
+  - macOS の場合 `~/Library/Application Support/opencode-gui-client/config.json`
+  - Linux の場合 `~/.config/opencode-gui-client/config.json`
+- 設定ファイルは暗号化されていませんので、API key が平文で書かれています。取り扱いにご注意ください。
 
 ## ライセンス
 
