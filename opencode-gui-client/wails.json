@@ -7,7 +7,12 @@
   "frontend:dev:watcher": "npm run dev",
   "frontend:dev:serverUrl": "auto",
   "author": {
-    "name": "google-labs-jules[bot]",
-    "email": "161369871+google-labs-jules[bot]@users.noreply.github.com"
+    "name": "rerofumi"
+  },
+  "info": {
+    "productName": "OpenCode GUI Client",
+    "productVersion": "1.0.0",
+    "copyright": "Copyright rerofumi 2025",
+    "comments": "Built using Wails"
   }
 }

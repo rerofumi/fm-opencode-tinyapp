@@ -25,6 +25,7 @@ build/
 dist/
 bin/
 wails.json~
+!build/appicon.png
 
 # Frontend build artifacts
 frontend/dist/
