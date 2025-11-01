@@ -3,6 +3,14 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { GetMessages, SendMessage } from '../../../wailsjs/go/main/App';
 import { models } from '../../../wailsjs/go/models';
+// Wails の自動生成型には Event や TextPart は含まれないため、フロント側でイベント型を定義します。
+type ServerEvent = {
+    sessionID: string;
+    messageID: string;
+    partID: string;
+    data: any; // { type: 'text'; text: string } | 他のパート
+};
+import { EventsOn } from '../../../wailsjs/runtime';
 
 interface ChatPanelProps {
     sessionId: string | null;
@@ -19,6 +27,65 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const userScrolledUp = useRef(false);
+
+    useEffect(() => {
+        if (sessionId) {
+            const unsubscribe = EventsOn('server-event', (event: ServerEvent) => {
+                if (event.sessionID !== sessionId) return;
+
+                setMessages(prevMessages => {
+                    const existingMsgIndex = prevMessages.findIndex(m => m.info.id === event.messageID);
+
+                    if (existingMsgIndex !== -1) {
+                        // Update existing message
+                        const updatedMessages = [...prevMessages];
+                        const existingMessage = updatedMessages[existingMsgIndex];
+                        
+                        const partIndex = existingMessage.parts.findIndex(p => p.id === event.partID);
+                        if (partIndex !== -1) {
+                            // Update existing part
+                            const updatedParts = [...existingMessage.parts];
+                            const existingPart = updatedParts[partIndex];
+                            if (existingPart.type === 'text' && event.data?.type === 'text') {
+                                existingPart.text += String(event.data?.text ?? '');
+                            }
+                            updatedMessages[existingMsgIndex] = { ...existingMessage, parts: updatedParts };
+                        } else {
+                            // Add new part
+                            const newPart = {
+                                id: event.partID,
+                                type: 'text' as const,
+                                text: String(event.data?.text ?? ''),
+                            };
+                            updatedMessages[existingMsgIndex] = { ...existingMessage, parts: [...existingMessage.parts, newPart] };
+                        }
+                        return updatedMessages;
+                    } else {
+                        // Add new message
+                        const newPart = {
+                            id: event.partID,
+                            type: 'text' as const,
+                            text: String(event.data?.text ?? ''),
+                        };
+                        const newMessage = {
+                            info: {
+                                id: event.messageID,
+                                sessionID: event.sessionID,
+                                role: 'assistant',
+                                time: { created: Date.now() / 1000 },
+                            },
+                            parts: [newPart],
+                        };
+                        return [...prevMessages, newMessage];
+                    }
+                });
+            });
+
+            return () => {
+                unsubscribe();
+            };
+        }
+    }, [sessionId]);
 
     useEffect(() => {
         if (messages.length > 0) {

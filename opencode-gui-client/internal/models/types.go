@@ -78,8 +78,3 @@ type LogEntry struct {
 	Extra   interface{} `json:"extra,omitempty"`
 }
 
-// Event defines the structure for a server-sent event.
-type Event struct {
-	Type       string      `json:"type"`
-	Properties interface{} `json:"properties"`
-}

@@ -6,6 +6,9 @@ import (
 	"opencode-gui-client/internal/api"
 	"opencode-gui-client/internal/models"
 	"opencode-gui-client/internal/services"
+
+	"github.com/sirupsen/logrus"
+	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 // App struct holds the application's state and services.
@@ -16,6 +19,8 @@ type App struct {
 	configService    *services.ConfigService
 	fileService      *services.FileService
 	appConfigService *services.AppConfigService
+	streamClient     *api.StreamClient
+	logger           *logrus.Logger
 }
 
 // NewApp creates a new App application struct
@@ -27,6 +32,11 @@ func NewApp() *App {
 // and services are initialized.
 func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
+
+	// Initialize logger
+	a.logger = logrus.New()
+	a.logger.SetFormatter(&logrus.JSONFormatter{})
+	a.logger.SetLevel(logrus.InfoLevel)
 
 	// Initialize the app config service first
 	appConfigService, err := services.NewAppConfigService()
@@ -43,11 +53,46 @@ func (a *App) startup(ctx context.Context) {
 
 	// Initialize API client with the loaded URL
 	apiClient := api.NewClient(appConfig.ServerURL)
+	a.streamClient = api.NewStreamClient(appConfig.ServerURL, a.logger)
 
 	a.sessionService = services.NewSessionService(apiClient)
 	a.messageService = services.NewMessageService(apiClient)
 	a.configService = services.NewConfigService(apiClient)
 	a.fileService = services.NewFileService(apiClient)
+
+	// Start the event stream
+	go a.startEventForwarding()
+}
+
+func (a *App) startEventForwarding() {
+	eventChan, err := a.streamClient.SubscribeEvents(a.ctx)
+	if err != nil {
+		a.logger.Fatalf("Failed to subscribe to events: %v", err)
+	}
+
+	for {
+		select {
+		case <-a.ctx.Done():
+			a.logger.Info("Context done, stopping event forwarding.")
+			a.streamClient.Stop()
+			return
+		case event, ok := <-eventChan:
+			if !ok {
+				a.logger.Info("Event channel closed, stopping event forwarding.")
+				return
+			}
+			//a.logger.Infof("Forwarding event: %+v", event)
+			runtime.EventsEmit(a.ctx, "server-event", event)
+		}
+	}
+}
+
+// Shutdown is called when the app is shutting down.
+func (a *App) shutdown(ctx context.Context) {
+	a.logger.Info("Shutting down application.")
+	if a.streamClient != nil {
+		a.streamClient.Stop()
+	}
 }
 
 // === アプリケーション設定関連 ===
@@ -61,7 +106,6 @@ func (a *App) GetAppConfig() (*models.AppConfig, error) {
 func (a *App) UpdateAppConfig(config *models.AppConfig) error {
 	return a.appConfigService.UpdateAppConfig(config)
 }
-
 
 // === サーバー設定関連 ===
 
