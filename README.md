@@ -175,6 +175,12 @@ API key を設定しなければ動作しないだけですので、利用は任
 
 **rerofumi** - [GitHub](https://github.com/rerofumi) - rero2@yuumu.org
 
+### 使用コードエージェント
+
+- Jules
+- warp
+- github copilot
+
 ## 参考
 
 - [OpenCode](https://github.com/stackblitz/opencode) - AI-powered coding assistant
