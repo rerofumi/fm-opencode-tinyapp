@@ -23,16 +23,27 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isPolishing, setIsPolishing] = useState(false);
+    const [isWaiting, setIsWaiting] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const userScrolledUp = useRef(false);
+    const waitingTimeoutRef = useRef<number | null>(null);
 
     useEffect(() => {
         if (sessionId) {
             const unsubscribe = EventsOn('server-event', (event: ServerEvent) => {
                 if (event.sessionID !== sessionId) return;
+
+                // サーバーからの最初のイベント受信時にwaiting状態をクリア
+                if (isWaiting) {
+                    setIsWaiting(false);
+                    if (waitingTimeoutRef.current) {
+                        clearTimeout(waitingTimeoutRef.current);
+                        waitingTimeoutRef.current = null;
+                    }
+                }
 
                 setMessages(prevMessages => {
                     const existingMsgIndex = prevMessages.findIndex(m => m.info.id === event.messageID);
@@ -158,6 +169,14 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         const currentInputValue = inputValue;
         setInputValue('');
 
+        // メッセージ送信直後にwaiting状態を設定
+        setIsWaiting(true);
+        
+        // 1秒後にwaitingインジケータを表示（タイムアウト）
+        waitingTimeoutRef.current = window.setTimeout(() => {
+            setIsWaiting(true);
+        }, 1000);
+
         const textPart = models.TextInputPart.createFrom({
             type: "text",
             text: currentInputValue,
@@ -176,10 +195,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                 setMessages(prev => {
                     return [...prev.filter(m => m.info.id !== userMessage.info.id), userMessage, assistantMessage];
                 });
+                // 成功時はwaiting状態をクリア
+                setIsWaiting(false);
+                if (waitingTimeoutRef.current) {
+                    clearTimeout(waitingTimeoutRef.current);
+                    waitingTimeoutRef.current = null;
+                }
             })
             .catch(err => {
                 setError(`Failed to send message: ${err}`);
                 setMessages(prev => prev.filter(m => m.info.id !== userMessage.info.id));
+                // エラー時はwaiting状態をクリア
+                setIsWaiting(false);
+                if (waitingTimeoutRef.current) {
+                    clearTimeout(waitingTimeoutRef.current);
+                    waitingTimeoutRef.current = null;
+                }
             });
     };
 
@@ -237,6 +268,15 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                             ))}
                     </div>
                 ))}
+                {/* Waiting indicator */}
+                {isWaiting && (
+                    <div className="message assistant waiting">
+                        <div className="waiting-indicator">
+                            <div className="spinner"></div>
+                            <span>Thinking...</span>
+                        </div>
+                    </div>
+                )}
                 <div ref={messagesEndRef} />
             </div>
             {showScrollButton && (
