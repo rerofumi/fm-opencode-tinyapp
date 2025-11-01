@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"opencode-gui-client/internal/api"
-	"opencode-gui-client/internal/models"
-	"opencode-gui-client/internal/services"
+	"fm-opencode-tinyapp/internal/api"
+	"fm-opencode-tinyapp/internal/models"
+	"fm-opencode-tinyapp/internal/services"
 
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2/pkg/runtime"

@@ -2,7 +2,7 @@ package services
 
 import (
 	"encoding/json"
-	"opencode-gui-client/internal/models"
+	"fm-opencode-tinyapp/internal/models"
 	"os"
 	"path/filepath"
 )
@@ -18,7 +18,7 @@ func NewAppConfigService() (*AppConfigService, error) {
 	if err != nil {
 		return nil, err
 	}
-	appConfigDir := filepath.Join(configDir, "opencode-gui-client")
+	appConfigDir := filepath.Join(configDir, "fm-opencode-tinyapp")
 	if err := os.MkdirAll(appConfigDir, 0750); err != nil {
 		return nil, err
 	}

@@ -1,8 +1,8 @@
 package services
 
 import (
-	"opencode-gui-client/internal/api"
-	"opencode-gui-client/internal/models"
+	"fm-opencode-tinyapp/internal/api"
+	"fm-opencode-tinyapp/internal/models"
 )
 
 // MessageService handles business logic for messages.

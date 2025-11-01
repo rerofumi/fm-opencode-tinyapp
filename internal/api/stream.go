@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"opencode-gui-client/internal/models"
+	"fm-opencode-tinyapp/internal/models"
 	"strings"
 	"time"
 

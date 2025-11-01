@@ -1,4 +1,4 @@
-module opencode-gui-client
+module fm-opencode-tinyapp
 
 go 1.23
 

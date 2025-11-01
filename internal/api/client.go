@@ -7,7 +7,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"opencode-gui-client/internal/models"
+	"fm-opencode-tinyapp/internal/models"
 	"time"
 )
 

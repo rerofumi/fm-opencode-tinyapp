@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"opencode-gui-client/internal/api"
-	"opencode-gui-client/internal/models"
+	"fm-opencode-tinyapp/internal/api"
+	"fm-opencode-tinyapp/internal/models"
 )
 
 // ConfigService handles business logic for configuration.
@@ -23,7 +23,7 @@ func NewConfigService(apiClient *api.Client) *ConfigService {
 	if err != nil {
 		configDir = "."
 	}
-	configDir = filepath.Join(configDir, "opencode-gui-client")
+	configDir = filepath.Join(configDir, "fm-opencode-tinyapp")
 
 	return &ConfigService{
 		apiClient: apiClient,

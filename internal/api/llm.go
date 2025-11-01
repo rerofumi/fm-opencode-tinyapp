@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"opencode-gui-client/internal/models"
+	"fm-opencode-tinyapp/internal/models"
 )
 
 // LLMClient handles LLM API requests.
