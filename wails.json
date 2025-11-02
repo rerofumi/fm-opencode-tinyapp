@@ -11,7 +11,7 @@
   },
   "info": {
     "productName": "OpenCode GUI Client",
-    "productVersion": "1.0.0",
+    "productVersion": "1.1.0",
     "copyright": "Copyright rerofumi 2025",
     "comments": "Built using Wails"
   }
