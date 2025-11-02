@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SessionList } from './components/Session/SessionList';
 import { ChatPanel } from './components/Chat/ChatPanel';
 import { Settings } from './components/Settings/Settings';
-import { GetSessions, CreateSession, DeleteSession, GetProviders } from '../wailsjs/go/main/App';
+import { GetSessions, CreateSession, DeleteSession, GetProviders, GetAgents } from '../wailsjs/go/main/App';
 import { models } from '../wailsjs/go/models';
 import './App.css';
 
@@ -14,6 +14,8 @@ function App() {
     const [currentModel, setCurrentModel] = useState<string | null>(null);
     const [providers, setProviders] = useState<models.Provider[]>([]);
     const [selectedModel, setSelectedModel] = useState<{ providerId: string; modelId: string } | null>(null);
+    const [agents, setAgents] = useState<models.Agent[]>([]);
+    const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
 
 
     const loadData = useCallback(() => {
@@ -34,6 +36,13 @@ function App() {
             })
             .catch(err => {
                 const errorMsg = `Failed to load providers: ${err}`;
+                setError(errorMsg);
+                console.error(errorMsg);
+            });
+        GetAgents()
+            .then(setAgents)
+            .catch(err => {
+                const errorMsg = `Failed to load agents: ${err}`;
                 setError(errorMsg);
                 console.error(errorMsg);
             });
@@ -116,6 +125,15 @@ function App() {
                 <div className="header">
                     <h1>OpenCode GUI</h1>
                     <div className="header-controls">
+                        <label htmlFor="agent-select">Agent:</label>
+                        <select id="agent-select" onChange={e => setSelectedAgent(e.target.value)} value={selectedAgent || ''}>
+                            <option value="">default</option>
+                            {agents.map(agent => (
+                                <option key={agent.name} value={agent.name}>
+                                    {agent.name}
+                                </option>
+                            ))}
+                        </select>
                         <label htmlFor="model-select">Model change:</label>
                         <select id="model-select" onChange={handleModelChange} value={selectedModel ? `${selectedModel.providerId}:${selectedModel.modelId}` : ''}>
                             {providers.map(provider => (
@@ -131,7 +149,7 @@ function App() {
                         <button onClick={() => setShowSettings(true)} title="Settings (Ctrl+,)">⚙️</button>
                     </div>
                 </div>
-                <ChatPanel sessionId={currentSessionId} onModelUpdate={setCurrentModel} selectedModel={selectedModel} />
+<ChatPanel sessionId={currentSessionId} onModelUpdate={setCurrentModel} selectedModel={selectedModel} selectedAgent={selectedAgent} />
                 <div className="statusbar">
                     {error && <div className="error-message">{error}</div>}
                     <div className="status-info">

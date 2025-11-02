@@ -62,13 +62,6 @@ type File struct {
 	Status  string `json:"status"`
 }
 
-// Agent defines the structure for an agent.
-type Agent struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Mode        string `json:"mode"`
-	Model       string `json:"model"`
-}
 
 // LogEntry defines the structure for a log entry.
 type LogEntry struct {

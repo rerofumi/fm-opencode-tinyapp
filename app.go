@@ -126,6 +126,11 @@ func (a *App) GetProviders() (*models.ProvidersResponse, error) {
 	return a.configService.GetProviders()
 }
 
+// GetAgents returns the list of available agents.
+func (a *App) GetAgents() ([]models.Agent, error) {
+	return a.configService.GetAgents()
+}
+
 // === セッション関連 ===
 
 // GetSessions returns all sessions.

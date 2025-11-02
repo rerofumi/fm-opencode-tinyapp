@@ -32,6 +32,12 @@ type AgentConfig struct {
 	Tools       map[string]bool `json:"tools,omitempty"`
 }
 
+// Agent represents an agent.
+type Agent struct {
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
+
 // ProvidersResponse defines the structure for the providers response.
 type ProvidersResponse struct {
 	Providers []Provider `json:"providers"`

@@ -1,5 +1,19 @@
 export namespace models {
 	
+	export class Agent {
+	    name: string;
+	    description: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new Agent(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.name = source["name"];
+	        this.description = source["description"];
+	    }
+	}
 	export class AgentConfig {
 	    model?: string;
 	    temperature?: number;
@@ -101,6 +115,7 @@ export namespace models {
 	export class ChatInput {
 	    parts: TextInputPart[];
 	    model?: ModelSelection;
+	    agent?: string;
 	
 	    static createFrom(source: any = {}) {
 	        return new ChatInput(source);
@@ -110,6 +125,7 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.parts = this.convertValues(source["parts"], TextInputPart);
 	        this.model = this.convertValues(source["model"], ModelSelection);
+	        this.agent = source["agent"];
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

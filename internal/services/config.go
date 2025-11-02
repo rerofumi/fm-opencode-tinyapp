@@ -41,6 +41,11 @@ func (s *ConfigService) GetProviders() (*models.ProvidersResponse, error) {
 	return s.apiClient.GetProviders()
 }
 
+// GetAgents retrieves the list of available agents.
+func (s *ConfigService) GetAgents() ([]models.Agent, error) {
+	return s.apiClient.GetAgents()
+}
+
 // GetAppConfig retrieves the application configuration.
 func (s *ConfigService) GetAppConfig() (*models.AppConfig, error) {
 	configPath := filepath.Join(s.configDir, "config.json")

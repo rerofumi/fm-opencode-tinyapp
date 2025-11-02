@@ -16,9 +16,10 @@ interface ChatPanelProps {
     sessionId: string | null;
     onModelUpdate: (model: string | null) => void;
     selectedModel: { providerId: string; modelId: string } | null;
+    selectedAgent: string | null;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent }) => {
     const [messages, setMessages] = useState<models.MessageWithParts[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -188,6 +189,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                 providerID: selectedModel.providerId,
                 modelID: selectedModel.modelId,
             }) : undefined,
+            agent: selectedAgent || undefined,
         });
 
         SendMessage(sessionId, chatInput)

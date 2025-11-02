@@ -149,6 +149,17 @@ func (c *Client) SendMessage(sessionID string, req *models.ChatInput) (*models.M
 	return &message, err
 }
 
+// GetAgents fetches the list of available agents.
+func (c *Client) GetAgents() ([]models.Agent, error) {
+	res, err := c.doRequest("GET", "/agent", nil, nil)
+	if err != nil {
+		return nil, err
+	}
+	var agents []models.Agent
+	err = decodeResponse(res, &agents)
+	return agents, err
+}
+
 // GetConfig fetches the server configuration.
 func (c *Client) GetConfig() (*models.ServerConfig, error) {
 	res, err := c.doRequest("GET", "/config", nil, nil)

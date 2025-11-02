@@ -22,6 +22,10 @@ export function FindSymbols(arg1) {
   return window['go']['main']['App']['FindSymbols'](arg1);
 }
 
+export function GetAgents() {
+  return window['go']['main']['App']['GetAgents']();
+}
+
 export function GetAppConfig() {
   return window['go']['main']['App']['GetAppConfig']();
 }

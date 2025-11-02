@@ -179,6 +179,7 @@ type ModelSelection struct {
 type ChatInput struct {
 	Parts []TextInputPart `json:"parts"`
 	Model *ModelSelection `json:"model,omitempty"`
+	Agent string          `json:"agent,omitempty"`
 }
 
 // CommandInput represents the input for a command.

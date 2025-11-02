@@ -78,7 +78,7 @@ OpenAPI spec: `GET /doc`
   - レスポンス: `{ info: Message, parts: Part[] }`
 - POST   /session/:id/message  
   - 説明: チャットメッセージ送信  
-  - Body (`ChatInput`): `{ parts: PartInput[], model?: { providerID, modelID }, ... }`
+  - Body (`ChatInput`): `{ parts: PartInput[], model?: { providerID, modelID }, agent?: string, ... }`
     - `PartInput`: `{ type: "text", text } | { type: "file", ... }`
   - レスポンス: `{ info: AssistantMessage, parts: Part[] }`
 - POST   /session/:id/shell  
