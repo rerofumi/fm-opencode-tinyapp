@@ -40,7 +40,7 @@ export namespace models {
         parts: Part[];
     }
 
-    export type Part = TextPart | ToolPart | any; // Allow for other part types
+    export type Part = TextPart | ReasoningPart | ToolPart | StepStartPart | StepFinishPart | any; // Allow for other part types
 
     export interface BasePart {
         id: string;
@@ -52,9 +52,35 @@ export namespace models {
         text: string;
     }
 
+    export interface ReasoningPart extends BasePart {
+        type: 'reasoning';
+        text: string;
+    }
+
     export interface ToolPart extends BasePart {
         type: 'tool';
         tool: string;
-        state: any; // Can be string or object
+        callID?: string;
+        state?: {
+            status?: 'pending' | 'running' | 'completed' | 'error';
+            input?: any;
+            output?: any;
+            title?: string;
+            metadata?: any;
+        };
+    }
+
+    // Internal step tracking parts (not typically rendered)
+    export interface StepStartPart extends BasePart {
+        type: 'step-start';
+        snapshot?: string;
+    }
+
+    export interface StepFinishPart extends BasePart {
+        type: 'step-finish';
+        reason?: string;
+        snapshot?: string;
+        cost?: number;
+        tokens?: any;
     }
 }

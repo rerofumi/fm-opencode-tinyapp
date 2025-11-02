@@ -83,13 +83,14 @@ func (a *App) startEventForwarding() {
 			a.logger.Info("Context done, stopping event forwarding.")
 			a.streamClient.Stop()
 			return
-		case event, ok := <-eventChan:
-			if !ok {
-				a.logger.Info("Event channel closed, stopping event forwarding.")
-				return
-			}
-			//a.logger.Infof("Forwarding event: %+v", event)
-			runtime.EventsEmit(a.ctx, "server-event", event)
+			case event, ok := <-eventChan:
+				if !ok {
+					a.logger.Info("Event channel closed, stopping event forwarding.")
+					return
+				}
+				a.logger.Infof("Forwarding event: Type=%s, Properties=%+v", 
+					event.Type, event.Properties)
+				runtime.EventsEmit(a.ctx, "server-event", event)
 		}
 	}
 }

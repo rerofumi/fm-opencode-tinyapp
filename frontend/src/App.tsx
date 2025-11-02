@@ -4,6 +4,7 @@ import { ChatPanel } from './components/Chat/ChatPanel';
 import { Settings } from './components/Settings/Settings';
 import { GetSessions, CreateSession, DeleteSession, GetProviders, GetAgents } from '../wailsjs/go/main/App';
 import { models } from '../wailsjs/go/models';
+import { EventsOn } from '../wailsjs/runtime';
 import './App.css';
 
 function App() {
@@ -50,6 +51,31 @@ function App() {
 
     useEffect(() => {
         loadData();
+        
+        // session.updated イベントをリッスンしてセッション一覧を更新
+        const unsubscribe = EventsOn('server-event', (event: any) => {
+            if (event.type === 'session.updated') {
+                const sessionInfo = event.properties?.info;
+                if (sessionInfo) {
+                    setSessions(prevSessions => {
+                        const existingIndex = prevSessions.findIndex(s => s.id === sessionInfo.id);
+                        if (existingIndex !== -1) {
+                            // 既存セッションを更新
+                            const updatedSessions = [...prevSessions];
+                            updatedSessions[existingIndex] = sessionInfo;
+                            return updatedSessions;
+                        } else {
+                            // 新規セッションを追加
+                            return [...prevSessions, sessionInfo];
+                        }
+                    });
+                }
+            }
+        });
+        
+        return () => {
+            unsubscribe();
+        };
     }, [loadData]);
 
     const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
