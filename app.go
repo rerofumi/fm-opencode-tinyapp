@@ -37,7 +37,6 @@ func (a *App) startup(ctx context.Context) {
 
 	// Initialize logger
 	a.logger = logrus.New()
-	a.logger.SetFormatter(&logrus.JSONFormatter{})
 	a.logger.SetLevel(logrus.InfoLevel)
 
 	// Initialize the app config service first

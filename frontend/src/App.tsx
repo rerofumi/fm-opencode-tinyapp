@@ -22,11 +22,7 @@ function App() {
     const loadData = useCallback(() => {
         GetSessions()
             .then(setSessions)
-            .catch(err => {
-                const errorMsg = `Failed to load sessions: ${err}`;
-                setError(errorMsg);
-                console.error(errorMsg);
-            });
+            .catch(err => setError(`Failed to load sessions: ${err}`));
         GetProviders()
             .then(response => {
                 setProviders(response.providers);
@@ -35,18 +31,10 @@ function App() {
                     setSelectedModel({ providerId: response.default.id, modelId: response.default.model });
                 }
             })
-            .catch(err => {
-                const errorMsg = `Failed to load providers: ${err}`;
-                setError(errorMsg);
-                console.error(errorMsg);
-            });
+            .catch(err => setError(`Failed to load providers: ${err}`));
         GetAgents()
             .then(setAgents)
-            .catch(err => {
-                const errorMsg = `Failed to load agents: ${err}`;
-                setError(errorMsg);
-                console.error(errorMsg);
-            });
+            .catch(err => setError(`Failed to load agents: ${err}`));
     }, []);
 
     useEffect(() => {
