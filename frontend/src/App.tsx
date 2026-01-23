@@ -40,6 +40,10 @@ function App() {
 
     useEffect(() => {
         loadData();
+
+        // Agent status events
+        const unsubscribeAgentStart = EventsOn('agent-started', () => setIsAgentRunning(true));
+        const unsubscribeAgentFinish = EventsOn('agent-finished', () => setIsAgentRunning(false));
         
         // session.updated イベントをリッスンしてセッション一覧を更新
         const unsubscribe = EventsOn('server-event', (event: any) => {
@@ -64,6 +68,8 @@ function App() {
         
         return () => {
             unsubscribe();
+            unsubscribeAgentStart();
+            unsubscribeAgentFinish();
         };
     }, [loadData]);
 
@@ -170,7 +176,6 @@ function App() {
                     onModelUpdate={setCurrentModel}
                     selectedModel={selectedModel}
                     selectedAgent={selectedAgent}
-                    onAgentStatusChange={setIsAgentRunning}
                 />
                 <div className="statusbar">
                     {error && <div className="error-message">{error}</div>}
