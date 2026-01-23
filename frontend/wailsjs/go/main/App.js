@@ -62,6 +62,10 @@ export function SendMessage(arg1, arg2) {
   return window['go']['main']['App']['SendMessage'](arg1, arg2);
 }
 
+export function StopMessage(arg1) {
+  return window['go']['main']['App']['StopMessage'](arg1);
+}
+
 export function UpdateAppConfig(arg1) {
   return window['go']['main']['App']['UpdateAppConfig'](arg1);
 }

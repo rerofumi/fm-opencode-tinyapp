@@ -24,3 +24,8 @@ func (s *MessageService) GetMessages(sessionID string) ([]models.MessageWithPart
 func (s *MessageService) SendMessage(sessionID string, req *models.ChatInput) (*models.MessageWithParts, error) {
 	return s.apiClient.SendMessage(sessionID, req)
 }
+
+// StopMessage stops the current agent execution in a session.
+func (s *MessageService) StopMessage(sessionID string) error {
+	return s.apiClient.StopMessage(sessionID)
+}

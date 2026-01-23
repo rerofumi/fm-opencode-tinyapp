@@ -172,6 +172,11 @@ func (a *App) SendMessage(sessionID string, req *models.ChatInput) (*models.Mess
 	return a.messageService.SendMessage(sessionID, req)
 }
 
+// StopMessage stops the current agent execution in a session.
+func (a *App) StopMessage(sessionID string) error {
+	return a.messageService.StopMessage(sessionID)
+}
+
 // === ファイル操作関連 ===
 
 // FindInFiles searches for a pattern in files.

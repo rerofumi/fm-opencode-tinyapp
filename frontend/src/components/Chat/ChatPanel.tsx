@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GetMessages, SendMessage, PolishText } from '../../../wailsjs/go/main/App';
+import { GetMessages, SendMessage, PolishText, StopMessage } from '../../../wailsjs/go/main/App';
 import { models } from '../../../wailsjs/go/models';
 import { models as typeModels } from '../../types';
 // Wails の自動生成型には Event や TextPart は含まれないため、フロント側でイベント型を定義します。
@@ -454,6 +454,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         }
     };
 
+    const handleStopMessage = () => {
+        if (!sessionId) return;
+
+        StopMessage(sessionId)
+            .then(() => {
+                setIsWaiting(false);
+                if (waitingTimeoutRef.current) {
+                    clearTimeout(waitingTimeoutRef.current);
+                    waitingTimeoutRef.current = null;
+                }
+                setError(null);
+            })
+            .catch((err: any) => {
+                setError(`Failed to stop message: ${err}`);
+            });
+    };
+
     const handleSendMessage = () => {
         if (!sessionId || !inputValue.trim()) return;
         userScrolledUp.current = false; // Auto-scroll when sending a new message
@@ -704,6 +721,16 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                         Send
                     </button>
                 </div>
+                {isWaiting && (
+                    <div className="stop-button-container">
+                        <button
+                            className="stop-button"
+                            onClick={handleStopMessage}
+                        >
+                            Stop
+                        </button>
+                    </div>
+                )}
             </div>
         </div>
     );
