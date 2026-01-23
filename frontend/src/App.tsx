@@ -7,6 +7,8 @@ import { models } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime';
 import './App.css';
 
+type PilotStatus = 'idle' | 'pending' | 'running';
+
 function App() {
     const [sessions, setSessions] = useState<models.Session[]>([]);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -17,8 +19,12 @@ function App() {
     const [selectedModel, setSelectedModel] = useState<{ providerId: string; modelId: string } | null>(null);
     const [agents, setAgents] = useState<models.Agent[]>([]);
     const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
-    const [isAgentRunning, setIsAgentRunning] = useState(false);
 
+    // 3-state pilot lamp:
+    // - idle: input-ready
+    // - pending: message sent, waiting for first stream event
+    // - running: agent producing/streaming until message.completed
+    const [pilotStatus, setPilotStatus] = useState<PilotStatus>('idle');
 
     const loadData = useCallback(() => {
         GetSessions()
@@ -41,10 +47,6 @@ function App() {
     useEffect(() => {
         loadData();
 
-        // Agent status events
-        const unsubscribeAgentStart = EventsOn('agent-started', () => setIsAgentRunning(true));
-        const unsubscribeAgentFinish = EventsOn('agent-finished', () => setIsAgentRunning(false));
-        
         // session.updated イベントをリッスンしてセッション一覧を更新
         const unsubscribe = EventsOn('server-event', (event: any) => {
             if (event.type === 'session.updated') {
@@ -65,11 +67,9 @@ function App() {
                 }
             }
         });
-        
+
         return () => {
             unsubscribe();
-            unsubscribeAgentStart();
-            unsubscribeAgentFinish();
         };
     }, [loadData]);
 
@@ -85,6 +85,7 @@ function App() {
             .then((newSession) => {
                 loadData();
                 setCurrentSessionId(newSession.id);
+                setPilotStatus('idle');
             })
             .catch(err => setError(`Failed to create session: ${err}`));
     }, [loadData]);
@@ -96,6 +97,7 @@ function App() {
                     loadData();
                     if (currentSessionId === id) {
                         setCurrentSessionId(null);
+                        setPilotStatus('idle');
                     }
                 })
                 .catch(err => setError(`Failed to delete session: ${err}`));
@@ -105,6 +107,7 @@ function App() {
     const handleSessionSelect = (id: string) => {
         setCurrentSessionId(id);
         setCurrentModel(null); // Reset model when session changes
+        setPilotStatus('idle');
     };
 
     // Keyboard shortcuts
@@ -131,6 +134,13 @@ function App() {
     }, [handleSessionCreate]);
 
 
+    const pilotTitle =
+        pilotStatus === 'pending'
+            ? 'Pending (waiting for first response)'
+            : pilotStatus === 'running'
+                ? 'Running (agent is working)'
+                : 'Idle (input-ready)';
+
     return (
         <div id="App">
             <div className="sidebar">
@@ -146,7 +156,7 @@ function App() {
                 <div className="header">
                     <h1>OpenCode GUI</h1>
                     <div className="header-controls">
-                        <div className={`pilot-lamp ${isAgentRunning ? 'running' : ''}`} title={isAgentRunning ? 'Agent is running' : 'Agent is idle'}></div>
+                        <div className={`pilot-lamp ${pilotStatus}`} title={pilotTitle}></div>
                         <label htmlFor="agent-select">Agent:</label>
                         <select id="agent-select" onChange={e => setSelectedAgent(e.target.value)} value={selectedAgent || ''}>
                             <option value="">default</option>
@@ -176,6 +186,7 @@ function App() {
                     onModelUpdate={setCurrentModel}
                     selectedModel={selectedModel}
                     selectedAgent={selectedAgent}
+                    onPilotStatusChange={setPilotStatus}
                 />
                 <div className="statusbar">
                     {error && <div className="error-message">{error}</div>}

@@ -90,19 +90,6 @@ func (a *App) startEventForwarding() {
 				a.logger.Infof("Forwarding event: Type=%s, Properties=%+v",
 					event.Type, event.Properties)
 
-				// Check for agent start/finish events
-				if event.Type == "agent" {
-					if status, ok := event.Properties["status"].(string); ok {
-						if status == "start" {
-							runtime.EventsEmit(a.ctx, "agent-started", nil)
-							a.logger.Info("Emitted agent-started event")
-						} else if status == "finish" {
-							runtime.EventsEmit(a.ctx, "agent-finished", nil)
-							a.logger.Info("Emitted agent-finished event")
-						}
-					}
-				}
-
 				// Forward the original event to the frontend
 				runtime.EventsEmit(a.ctx, "server-event", event)
 		}

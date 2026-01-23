@@ -1,32 +1,8 @@
 [tools]
-golang = "latest"
-nodejs = "22"
-wails = "latest"
+node = "lts"
+go = "latest"
 
-[env]
-PATH = "{{cwd}}/node_modules/.bin:$PATH"
-
-[tasks.dev]
-description = "Start wails development server"
-dir = "."
-run = "wails dev"
-
-[tasks.build]
-description = "Build wails application"
-dir = "."
-run = "wails build"
-
-[tasks.frontend-install]
-description = "Install frontend dependencies"
-dir = "frontend"
-run = "npm install"
-
-[tasks.frontend-build]
-description = "Build frontend"
-dir = "frontend"
-run = "npm run build"
-
-[tasks.frontend-dev]
-description = "Start frontend dev server"
-dir = "frontend"
-run = "npm run dev"
+[tasks]
+setup = { run = "go install github.com/wailsapp/wails/v2/cmd/wails@latest", description = "Install Wails CLI" }
+dev = { run = "wails dev", description = "Run Wails in development mode" }
+build = { run = "wails build", description = "Build the Wails application" }
