@@ -42,3 +42,8 @@ func (s *SessionService) UpdateSession(id, title string) (*models.Session, error
 func (s *SessionService) DeleteSession(id string) error {
 	return s.apiClient.DeleteSession(id)
 }
+
+// CompactSession compacts a session.
+func (s *SessionService) CompactSession(id string) error {
+	return s.apiClient.CompactSession(id)
+}

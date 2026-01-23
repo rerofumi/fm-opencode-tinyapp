@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GetMessages, SendMessage, PolishText, StopMessage } from '../../../wailsjs/go/main/App';
+import { GetMessages, SendMessage, PolishText, StopMessage, CompactSession } from '../../../wailsjs/go/main/App';
 import { models } from '../../../wailsjs/go/models';
 import { models as typeModels } from '../../types';
 // Wails の自動生成型には Event や TextPart は含まれないため、フロント側でイベント型を定義します。
@@ -47,6 +47,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isPolishing, setIsPolishing] = useState(false);
+    const [isCompacting, setIsCompacting] = useState(false);
     const [isWaiting, setIsWaiting] = useState(false);
     const isWaitingRef = useRef(false);
     const [error, setError] = useState<string | null>(null);
@@ -598,6 +599,28 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         }
     };
 
+    const handleCompact = async () => {
+        if (!sessionId) return;
+
+        setIsCompacting(true);
+        setError(null);
+
+        try {
+            await CompactSession(sessionId);
+            // Reload messages after compacting
+            const msgs = await GetMessages(sessionId);
+            const cleanedMessages = msgs.map(msg => ({
+                ...msg,
+                parts: msg.parts.filter(p => p && typeof p === 'object')
+            }));
+            setMessages(cleanedMessages);
+        } catch (err) {
+            setError(`Failed to compact session: ${err}`);
+        } finally {
+            setIsCompacting(false);
+        }
+    };
+
     if (!sessionId) {
         return <div className="chat-panel centered">Select a session to start chatting</div>;
     }
@@ -707,16 +730,24 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     onChange={e => setInputValue(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Type your message... (Ctrl+Enter to send)"
-                    disabled={isLoading || isPolishing}
+                    disabled={isLoading || isPolishing || isCompacting}
                 />
                 <div className="input-actions">
-                    <button 
-                        className="polish-button" 
+                    <button
+                        className="polish-button"
                         onClick={handlePolishText}
-                        disabled={isLoading || isPolishing || !inputValue.trim()}
+                        disabled={isLoading || isPolishing || isCompacting || !inputValue.trim()}
                         title="Polish text using LLM"
                     >
                         {isPolishing ? 'Polishing...' : 'LLM Polish'}
+                    </button>
+                    <button
+                        className="compact-button"
+                        onClick={handleCompact}
+                        disabled={isLoading || isPolishing || isCompacting}
+                        title="Compact session"
+                    >
+                        {isCompacting ? 'Compacting...' : 'Compact'}
                     </button>
                     {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') ? (
                         <button
@@ -727,10 +758,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                             ⏹ Stop
                         </button>
                     ) : (
-                        <button 
-                            className="send-button" 
+                        <button
+                            className="send-button"
                             onClick={handleSendMessage}
-                            disabled={isLoading || isPolishing || !inputValue.trim()}
+                            disabled={isLoading || isPolishing || isCompacting || !inputValue.trim()}
                         >
                             Send
                         </button>

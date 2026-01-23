@@ -127,6 +127,20 @@ func (c *Client) DeleteSession(id string) error {
 	return nil
 }
 
+// CompactSession sends a request to compact a session.
+func (c *Client) CompactSession(id string) error {
+	res, err := c.doRequest("POST", fmt.Sprintf("/session/%s/compact", id), nil, nil)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		body, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("unexpected status code: %d, response body: %s", res.StatusCode, string(body))
+	}
+	return nil
+}
+
 // GetMessages fetches all messages for a given session.
 func (c *Client) GetMessages(sessionID string) ([]models.MessageWithParts, error) {
 	res, err := c.doRequest("GET", fmt.Sprintf("/session/%s/message", sessionID), nil, nil)

@@ -146,6 +146,20 @@ export namespace models {
 		    return a;
 		}
 	}
+	export class DefaultProvider {
+	    id: string;
+	    model: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new DefaultProvider(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.id = source["id"];
+	        this.model = source["model"];
+	    }
+	}
 	export class FileContent {
 	    content: string;
 	    diff?: string;
@@ -177,11 +191,24 @@ export namespace models {
 	        this.parts = source["parts"];
 	    }
 	}
+	export class ModelLimit {
+	    context: number;
+	    output: number;
+	
+	    static createFrom(source: any = {}) {
+	        return new ModelLimit(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.context = source["context"];
+	        this.output = source["output"];
+	    }
+	}
 	export class Model {
 	    id: string;
 	    name: string;
-	    // Go type: struct { Context int "json:\"context\""; Output int "json:\"output\"" }
-	    limit: any;
+	    limit: ModelLimit;
 	
 	    static createFrom(source: any = {}) {
 	        return new Model(source);
@@ -191,7 +218,7 @@ export namespace models {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.id = source["id"];
 	        this.name = source["name"];
-	        this.limit = this.convertValues(source["limit"], Object);
+	        this.limit = this.convertValues(source["limit"], ModelLimit);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {
@@ -212,6 +239,7 @@ export namespace models {
 		    return a;
 		}
 	}
+	
 	
 	export class Position {
 	    line: number;
@@ -263,8 +291,7 @@ export namespace models {
 	}
 	export class ProvidersResponse {
 	    providers: Provider[];
-	    // Go type: struct { ID string "json:\"id\""; Model string "json:\"model\"" }
-	    default: any;
+	    default: DefaultProvider;
 	
 	    static createFrom(source: any = {}) {
 	        return new ProvidersResponse(source);
@@ -273,7 +300,7 @@ export namespace models {
 	    constructor(source: any = {}) {
 	        if ('string' === typeof source) source = JSON.parse(source);
 	        this.providers = this.convertValues(source["providers"], Provider);
-	        this.default = this.convertValues(source["default"], Object);
+	        this.default = this.convertValues(source["default"], DefaultProvider);
 	    }
 	
 		convertValues(a: any, classs: any, asMap: boolean = false): any {

@@ -160,6 +160,11 @@ func (a *App) DeleteSession(id string) error {
 	return a.sessionService.DeleteSession(id)
 }
 
+// CompactSession compacts a session.
+func (a *App) CompactSession(sessionID string) error {
+	return a.sessionService.CompactSession(sessionID)
+}
+
 // === メッセージ関連 ===
 
 // GetMessages returns all messages for a session.
