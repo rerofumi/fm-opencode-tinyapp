@@ -36,9 +36,10 @@ interface ChatPanelProps {
     onModelUpdate: (model: string | null) => void;
     selectedModel: { providerId: string; modelId: string } | null;
     selectedAgent: string | null;
+    onAgentStatusChange: (isRunning: boolean) => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent, onAgentStatusChange }) => {
     const [messages, setMessages] = useState<models.MessageWithParts[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -50,6 +51,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const userScrolledUp = useRef(false);
     const waitingTimeoutRef = useRef<number | null>(null);
+    const [runningTools, setRunningTools] = useState(new Set<string>());
 
     useEffect(() => {
         if (sessionId) {
@@ -118,6 +120,19 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                                 } else if (existingPart.type === 'tool' && part.type === 'tool') {
                                     // Update tool part state
                                     Object.assign(existingPart, part);
+
+                                    // Update running tools set
+                                    const toolPart = part as typeModels.ToolPart;
+                                    setRunningTools(prev => {
+                                        const newSet = new Set(prev);
+                                        if (toolPart.state?.status === 'running') {
+                                            newSet.add(toolPart.id);
+                                        } else if (toolPart.state?.status === 'completed' || toolPart.state?.status === 'error') {
+                                            newSet.delete(toolPart.id);
+                                        }
+                                        onAgentStatusChange(newSet.size > 0);
+                                        return newSet;
+                                    });
                                 }
                                 updatedMessages[existingMsgIndex] = { ...existingMessage, parts: updatedParts };
                             } else {

@@ -17,6 +17,7 @@ function App() {
     const [selectedModel, setSelectedModel] = useState<{ providerId: string; modelId: string } | null>(null);
     const [agents, setAgents] = useState<models.Agent[]>([]);
     const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+    const [isAgentRunning, setIsAgentRunning] = useState(false);
 
 
     const loadData = useCallback(() => {
@@ -139,6 +140,7 @@ function App() {
                 <div className="header">
                     <h1>OpenCode GUI</h1>
                     <div className="header-controls">
+                        <div className={`pilot-lamp ${isAgentRunning ? 'running' : ''}`} title={isAgentRunning ? 'Agent is running' : 'Agent is idle'}></div>
                         <label htmlFor="agent-select">Agent:</label>
                         <select id="agent-select" onChange={e => setSelectedAgent(e.target.value)} value={selectedAgent || ''}>
                             <option value="">default</option>
@@ -163,7 +165,13 @@ function App() {
                         <button onClick={() => setShowSettings(true)} title="Settings (Ctrl+,)">⚙️</button>
                     </div>
                 </div>
-<ChatPanel sessionId={currentSessionId} onModelUpdate={setCurrentModel} selectedModel={selectedModel} selectedAgent={selectedAgent} />
+                <ChatPanel
+                    sessionId={currentSessionId}
+                    onModelUpdate={setCurrentModel}
+                    selectedModel={selectedModel}
+                    selectedAgent={selectedAgent}
+                    onAgentStatusChange={setIsAgentRunning}
+                />
                 <div className="statusbar">
                     {error && <div className="error-message">{error}</div>}
                     <div className="status-info">
