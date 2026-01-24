@@ -87,8 +87,10 @@ func (a *App) startEventForwarding() {
 					a.logger.Info("Event channel closed, stopping event forwarding.")
 					return
 				}
-				a.logger.Infof("Forwarding event: Type=%s, Properties=%+v", 
+				a.logger.Infof("Forwarding event: Type=%s, Properties=%+v",
 					event.Type, event.Properties)
+
+				// Forward the original event to the frontend
 				runtime.EventsEmit(a.ctx, "server-event", event)
 		}
 	}

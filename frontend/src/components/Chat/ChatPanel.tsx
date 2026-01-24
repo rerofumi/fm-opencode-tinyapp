@@ -31,25 +31,149 @@ type SessionUpdatedEvent = {
 type ServerEvent = MessagePartUpdatedEvent | MessageUpdatedEvent | SessionUpdatedEvent;
 import { EventsOn } from '../../../wailsjs/runtime';
 
+type PilotStatus = 'idle' | 'pending' | 'running';
+
 interface ChatPanelProps {
     sessionId: string | null;
     onModelUpdate: (model: string | null) => void;
     selectedModel: { providerId: string; modelId: string } | null;
     selectedAgent: string | null;
+    onPilotStatusChange?: (status: PilotStatus) => void;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent, onPilotStatusChange }) => {
     const [messages, setMessages] = useState<models.MessageWithParts[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [isPolishing, setIsPolishing] = useState(false);
     const [isWaiting, setIsWaiting] = useState(false);
+    const isWaitingRef = useRef(false);
     const [error, setError] = useState<string | null>(null);
     const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const userScrolledUp = useRef(false);
     const waitingTimeoutRef = useRef<number | null>(null);
+
+    // Poll OpenCode state to recover from missed SSE events / silent periods.
+    // Only transitions to idle when the server reports completion.
+    const POLL_INTERVAL_MS = 10_000;
+    const pilotStatusRef = useRef<PilotStatus>('idle');
+    const lastRelevantEventAtRef = useRef<number>(Date.now());
+    const activeAssistantMessageIDRef = useRef<string | null>(null);
+    const activeRequestStartedAtRef = useRef<number | null>(null); // seconds (approx)
+
+    const emitPilotStatus = (status: PilotStatus) => {
+        pilotStatusRef.current = status;
+        onPilotStatusChange?.(status);
+    };
+
+    const syncPilotFromMessages = (msgs: any[]) => {
+        const trackedID = activeAssistantMessageIDRef.current;
+        const activeStartedAt = activeRequestStartedAtRef.current;
+
+        let assistantMsg: any | null = null;
+
+        // 1) If we have a tracked assistant message ID (best), use it.
+        if (trackedID) {
+            assistantMsg = msgs.find(m => (m as any)?.info?.id === trackedID && (m as any)?.info?.role === 'assistant') || null;
+        }
+
+        // 2) If we're in pending and we have an active request start time, only consider
+        // assistant messages created after the send time. This prevents mistakenly
+        // flipping to idle based on an older, completed assistant message.
+        if (!assistantMsg && pilotStatusRef.current === 'pending' && typeof activeStartedAt === 'number') {
+            const cutoff = activeStartedAt - 1; // allow slight clock skew
+            assistantMsg =
+                [...msgs]
+                    .reverse()
+                    .find(m => (m as any)?.info?.role === 'assistant' && ((m as any)?.info?.time?.created ?? 0) >= cutoff) || null;
+
+            // If we still can't see an assistant message for this request, keep pending.
+            if (!assistantMsg) {
+                return;
+            }
+        }
+
+        // 3) Fallback: latest assistant message in the session.
+        if (!assistantMsg) {
+            assistantMsg = [...msgs].reverse().find(m => (m as any)?.info?.role === 'assistant') || null;
+        }
+
+        if (!assistantMsg) {
+            emitPilotStatus('idle');
+            activeAssistantMessageIDRef.current = null;
+            activeRequestStartedAtRef.current = null;
+            return;
+        }
+
+        // We can observe the assistant message for this request -> clear any "waiting" warning.
+        setError(null);
+
+        const completed = (assistantMsg as any)?.info?.time?.completed;
+        emitPilotStatus(completed ? 'idle' : 'running');
+
+        // Once we know which assistant message is active, track it.
+        const id = (assistantMsg as any)?.info?.id;
+        if (!activeAssistantMessageIDRef.current && typeof id === 'string') {
+            activeAssistantMessageIDRef.current = id;
+        }
+
+        // If we transition away from pending (either to running or idle), stop showing the pending indicator.
+        if (isWaitingRef.current) {
+            setIsWaiting(false);
+            isWaitingRef.current = false;
+            if (waitingTimeoutRef.current) {
+                clearTimeout(waitingTimeoutRef.current);
+                waitingTimeoutRef.current = null;
+            }
+        }
+
+        if (completed) {
+            activeAssistantMessageIDRef.current = null;
+            activeRequestStartedAtRef.current = null;
+        }
+    };
+
+    const pollServerState = (reason: string) => {
+        if (!sessionId) return;
+        console.log(`[pilot] polling server state (${reason})`);
+        GetMessages(sessionId)
+            .then((msgs: any[]) => syncPilotFromMessages(msgs))
+            .catch(err => console.error(`[pilot] poll failed (${reason}):`, err));
+    };
+
+    useEffect(() => {
+        isWaitingRef.current = isWaiting;
+    }, [isWaiting]);
+
+    useEffect(() => {
+        // No session -> always idle
+        if (!sessionId) {
+            activeAssistantMessageIDRef.current = null;
+            activeRequestStartedAtRef.current = null;
+            emitPilotStatus('idle');
+        }
+    }, [sessionId]);
+
+    useEffect(() => {
+        if (!sessionId) return;
+
+        const intervalId = window.setInterval(() => {
+            const status = pilotStatusRef.current;
+            if (status === 'idle') return;
+
+            const sinceLast = Date.now() - lastRelevantEventAtRef.current;
+            // Avoid polling while events are flowing.
+            if (sinceLast < POLL_INTERVAL_MS) return;
+
+            pollServerState('interval');
+        }, POLL_INTERVAL_MS);
+
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [sessionId]);
 
     useEffect(() => {
         if (sessionId) {
@@ -78,9 +202,22 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                         return;
                     }
 
+                    lastRelevantEventAtRef.current = Date.now();
+
+                    setError(null);
+
+                    // We received streaming evidence -> running
+                    emitPilotStatus('running');
+
+                    // If we are tracking a specific assistant message, infer it from the part if needed
+                    if (!activeAssistantMessageIDRef.current && typeof part.messageID === 'string') {
+                        activeAssistantMessageIDRef.current = part.messageID;
+                    }
+
                     // サーバーからの最初のイベント受信時にwaiting状態をクリア
-                    if (isWaiting) {
+                    if (isWaitingRef.current) {
                         setIsWaiting(false);
+                        isWaitingRef.current = false;
                         if (waitingTimeoutRef.current) {
                             clearTimeout(waitingTimeoutRef.current);
                             waitingTimeoutRef.current = null;
@@ -155,11 +292,32 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     if (messageInfo.sessionID !== sessionId) {
                         return;
                     }
+
+                    lastRelevantEventAtRef.current = Date.now();
+
+                    // Track the active assistant message if we don't have one yet
+                    if (messageInfo.role === 'assistant' && typeof messageInfo.id === 'string') {
+                        if (!activeAssistantMessageIDRef.current) {
+                            activeAssistantMessageIDRef.current = messageInfo.id;
+                        }
+                    }
+
+                    setError(null);
+
+                    // assistant が更新された/作成された → running
+                    if (messageInfo.role === 'assistant' && !messageInfo.time?.completed) {
+                        emitPilotStatus('running');
+                    }
                     
                     // メッセージ完了時にwaiting状態をクリアし、最終状態を同期
                     if (messageInfo.time?.completed) {
-                        if (isWaiting) {
+                        emitPilotStatus('idle');
+                        activeAssistantMessageIDRef.current = null;
+                        activeRequestStartedAtRef.current = null;
+
+                        if (isWaitingRef.current) {
                             setIsWaiting(false);
+                            isWaitingRef.current = false;
                             if (waitingTimeoutRef.current) {
                                 clearTimeout(waitingTimeoutRef.current);
                                 waitingTimeoutRef.current = null;
@@ -233,7 +391,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                 unsubscribe();
             };
         }
-    }, [sessionId, isWaiting]);
+    }, [sessionId, onPilotStatusChange]);
 
     useEffect(() => {
         if (messages.length > 0) {
@@ -268,11 +426,17 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                         parts: msg.parts.filter(p => p && typeof p === 'object')
                     }));
                     setMessages(cleanedMessages);
+
+                    // Determine pilot status from latest assistant message if possible
+                    syncPilotFromMessages(cleanedMessages as any[]);
                 })
                 .catch(err => setError(`Failed to load messages: ${err}`))
                 .finally(() => setIsLoading(false));
         } else {
             setMessages([]);
+            activeAssistantMessageIDRef.current = null;
+            activeRequestStartedAtRef.current = null;
+            emitPilotStatus('idle');
         }
     }, [sessionId]);
 
@@ -299,6 +463,11 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
 
         // メッセージ送信直後にwaiting状態を設定
         setIsWaiting(true);
+        isWaitingRef.current = true;
+        activeAssistantMessageIDRef.current = null;
+        activeRequestStartedAtRef.current = Date.now() / 1000;
+        lastRelevantEventAtRef.current = Date.now();
+        emitPilotStatus('pending');
         
         // 仮のユーザーメッセージを即座に表示
         const tempMessageId = `temp_${Date.now()}`;
@@ -317,12 +486,13 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         };
         setMessages(prev => [...prev, tempUserMessage]);
         
-        // 5秒後にタイムアウトでエラー表示
+        // 10秒後にタイムアウトで状態確認
+        // SSEが来ない/遅いケースでも、RESTで「完了したのか/まだ動いているのか」を判定する
         waitingTimeoutRef.current = window.setTimeout(() => {
-            if (isWaiting) {
-                setError('メッセージの送信に時間がかかっています...');
-            }
-        }, 5000);
+            if (!isWaitingRef.current || !sessionId) return;
+            setError('応答待ちです（ストリーム開始が遅延している可能性があります）');
+            pollServerState('pending-timeout');
+        }, 10000);
 
         const textPart = models.TextInputPart.createFrom({
             type: "text",
@@ -339,21 +509,30 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         });
 
         SendMessage(sessionId, chatInput)
-            .then(() => {
+            .then((resp: any) => {
+                // If the API returns the assistant message, track it.
+                const assistantID = resp?.info?.id;
+                if (typeof assistantID === 'string') {
+                    activeAssistantMessageIDRef.current = assistantID;
+                }
+
                 // メッセージ送信成功後、最新のメッセージ一覧を再取得
                 // 仮のメッセージを実際のメッセージで置き換え
                 GetMessages(sessionId)
-                    .then(msgs => {
+                    .then((msgs: any[]) => {
                         // Filter out null parts from messages
-                        const cleanedMessages = msgs.map(msg => ({
+                        const cleanedMessages = msgs.map((msg: any) => ({
                             ...msg,
-                            parts: msg.parts.filter(p => p && typeof p === 'object')
+                            parts: msg.parts.filter((p: any) => p && typeof p === 'object')
                         }));
                         // 仮メッセージを削除して実際のメッセージで置き換え
                         setMessages(prev => {
                             const withoutTemp = prev.filter(m => !m.info.id.startsWith('temp_'));
                             return cleanedMessages;
                         });
+
+                        // If we can already observe an assistant message that isn't completed, we are effectively running
+                        syncPilotFromMessages(cleanedMessages);
                     })
                     .catch(err => console.error('Failed to reload messages:', err));
                 setError(null);
@@ -362,6 +541,8 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                 setError(`Failed to send message: ${err}`);
                 // エラー時はwaiting状態をクリア
                 setIsWaiting(false);
+                isWaitingRef.current = false;
+                emitPilotStatus('idle');
                 if (waitingTimeoutRef.current) {
                     clearTimeout(waitingTimeoutRef.current);
                     waitingTimeoutRef.current = null;
