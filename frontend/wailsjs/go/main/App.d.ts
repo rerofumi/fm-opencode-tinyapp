@@ -32,6 +32,8 @@ export function ReadFile(arg1:string):Promise<models.FileContent>;
 
 export function SendMessage(arg1:string,arg2:models.ChatInput):Promise<models.MessageWithParts>;
 
+export function StopMessage(arg1:string):Promise<void>;
+
 export function UpdateAppConfig(arg1:models.AppConfig):Promise<void>;
 
 export function UpdateSession(arg1:string,arg2:string):Promise<models.Session>;

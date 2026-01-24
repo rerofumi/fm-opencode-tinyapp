@@ -323,6 +323,25 @@ body, html {
     cursor: not-allowed;
 }
 
+.stop-button {
+    padding: 8px 16px;
+    background-color: #c86464;
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.2s ease;
+}
+
+.stop-button:hover {
+    background-color: #d07474;
+}
+
+.stop-button:active {
+    background-color: #b85454;
+}
+
 /* Settings Modal Styles */
 .modal-backdrop {
     position: fixed;

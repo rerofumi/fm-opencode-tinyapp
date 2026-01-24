@@ -233,3 +233,16 @@ func (c *Client) GetProviders() (*models.ProvidersResponse, error) {
 	err = decodeResponse(res, &providersResponse)
 	return &providersResponse, err
 }
+
+// StopMessage stops the current agent execution in a session.
+func (c *Client) StopMessage(sessionID string) error {
+	res, err := c.doRequest("POST", fmt.Sprintf("/session/%s/abort", sessionID), nil, nil)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		return fmt.Errorf("unexpected status code: %d", res.StatusCode)
+	}
+	return nil
+}

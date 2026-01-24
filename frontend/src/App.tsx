@@ -187,6 +187,7 @@ function App() {
                     selectedModel={selectedModel}
                     selectedAgent={selectedAgent}
                     onPilotStatusChange={setPilotStatus}
+                    pilotStatus={pilotStatus}
                 />
                 <div className="statusbar">
                     {error && <div className="error-message">{error}</div>}

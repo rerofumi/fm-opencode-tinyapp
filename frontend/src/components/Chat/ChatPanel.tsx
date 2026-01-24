@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GetMessages, SendMessage, PolishText } from '../../../wailsjs/go/main/App';
+import { GetMessages, SendMessage, PolishText, StopMessage } from '../../../wailsjs/go/main/App';
 import { models } from '../../../wailsjs/go/models';
 import { models as typeModels } from '../../types';
 // Wails の自動生成型には Event や TextPart は含まれないため、フロント側でイベント型を定義します。
@@ -39,9 +39,10 @@ interface ChatPanelProps {
     selectedModel: { providerId: string; modelId: string } | null;
     selectedAgent: string | null;
     onPilotStatusChange?: (status: PilotStatus) => void;
+    pilotStatus?: PilotStatus;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent, onPilotStatusChange }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent, onPilotStatusChange, pilotStatus: externalPilotStatus }) => {
     const [messages, setMessages] = useState<models.MessageWithParts[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -454,6 +455,27 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         }
     };
 
+    const handleStopMessage = () => {
+        if (!sessionId) return;
+
+        StopMessage(sessionId)
+            .then(() => {
+                setIsWaiting(false);
+                if (waitingTimeoutRef.current) {
+                    clearTimeout(waitingTimeoutRef.current);
+                    waitingTimeoutRef.current = null;
+                }
+                // Stop 成功後、状態を idle に設定
+                emitPilotStatus('idle');
+                activeAssistantMessageIDRef.current = null;
+                activeRequestStartedAtRef.current = null;
+                setError(null);
+            })
+            .catch((err: any) => {
+                setError(`Failed to stop message: ${err}`);
+            });
+    };
+
     const handleSendMessage = () => {
         if (!sessionId || !inputValue.trim()) return;
         userScrolledUp.current = false; // Auto-scroll when sending a new message
@@ -696,13 +718,23 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     >
                         {isPolishing ? 'Polishing...' : 'LLM Polish'}
                     </button>
-                    <button 
-                        className="send-button" 
-                        onClick={handleSendMessage}
-                        disabled={isLoading || isPolishing || !inputValue.trim()}
-                    >
-                        Send
-                    </button>
+                    {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') ? (
+                        <button
+                            className="stop-button"
+                            onClick={handleStopMessage}
+                            title="Stop agent execution"
+                        >
+                            ⏹ Stop
+                        </button>
+                    ) : (
+                        <button 
+                            className="send-button" 
+                            onClick={handleSendMessage}
+                            disabled={isLoading || isPolishing || !inputValue.trim()}
+                        >
+                            Send
+                        </button>
+                    )}
                 </div>
             </div>
         </div>
