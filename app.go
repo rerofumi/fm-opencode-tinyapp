@@ -165,11 +165,6 @@ func (a *App) SummarizeSession(sessionID string, providerID string, modelID stri
 	return a.sessionService.SummarizeSession(sessionID, providerID, modelID)
 }
 
-// CompactSession compacts a session (compress message history).
-func (a *App) CompactSession(sessionID string) error {
-	return a.sessionService.CompactSession(sessionID)
-}
-
 // === メッセージ関連 ===
 
 // GetMessages returns all messages for a session.

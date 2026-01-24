@@ -359,24 +359,6 @@ body, html {
     background-color: #b85454;
 }
 
-.compact-button {
-    padding: 8px 16px;
-    background-color: #5a6d7d;
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.compact-button:hover {
-    background-color: #6a7d8d;
-}
-
-.compact-button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
 
 /* Settings Modal Styles */
 .modal-backdrop {
