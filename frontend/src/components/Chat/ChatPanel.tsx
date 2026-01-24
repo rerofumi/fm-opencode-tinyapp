@@ -39,9 +39,10 @@ interface ChatPanelProps {
     selectedModel: { providerId: string; modelId: string } | null;
     selectedAgent: string | null;
     onPilotStatusChange?: (status: PilotStatus) => void;
+    pilotStatus?: PilotStatus;
 }
 
-export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent, onPilotStatusChange }) => {
+export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, selectedModel, selectedAgent, onPilotStatusChange, pilotStatus: externalPilotStatus }) => {
     const [messages, setMessages] = useState<models.MessageWithParts[]>([]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -464,6 +465,10 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     clearTimeout(waitingTimeoutRef.current);
                     waitingTimeoutRef.current = null;
                 }
+                // Stop 成功後、状態を idle に設定
+                emitPilotStatus('idle');
+                activeAssistantMessageIDRef.current = null;
+                activeRequestStartedAtRef.current = null;
                 setError(null);
             })
             .catch((err: any) => {
@@ -721,7 +726,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                         Send
                     </button>
                 </div>
-                {isWaiting && (
+                {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') && (
                     <div className="stop-button-container">
                         <button
                             className="stop-button"
