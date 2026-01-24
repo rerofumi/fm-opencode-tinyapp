@@ -128,8 +128,9 @@ func (c *Client) DeleteSession(id string) error {
 }
 
 // CompactSession sends a request to compact a session.
+// Note: OpenCode API uses /summarize endpoint for session compaction
 func (c *Client) CompactSession(id string) error {
-	res, err := c.doRequest("POST", fmt.Sprintf("/session/%s/compact", id), nil, nil)
+	res, err := c.doRequest("POST", fmt.Sprintf("/session/%s/summarize", id), nil, nil)
 	if err != nil {
 		return err
 	}
