@@ -40,11 +40,14 @@ type Agent struct {
 
 // ProvidersResponse defines the structure for the providers response.
 type ProvidersResponse struct {
-	Providers []Provider `json:"providers"`
-	Default   struct {
-		ID    string `json:"id"`
-		Model string `json:"model"`
-	} `json:"default"`
+	Providers []Provider      `json:"providers"`
+	Default   DefaultProvider `json:"default"`
+}
+
+// DefaultProvider defines the structure for the default provider.
+type DefaultProvider struct {
+	ID    string `json:"id"`
+	Model string `json:"model"`
 }
 
 // Provider defines the structure for a provider.
@@ -56,12 +59,15 @@ type Provider struct {
 
 // Model defines the structure for a model.
 type Model struct {
-	ID    string `json:"id"`
-	Name  string `json:"name"`
-	Limit struct {
-		Context int `json:"context"`
-		Output  int `json:"output"`
-	} `json:"limit"`
+	ID    string     `json:"id"`
+	Name  string     `json:"name"`
+	Limit ModelLimit `json:"limit"`
+}
+
+// ModelLimit defines the structure for a model's limits.
+type ModelLimit struct {
+	Context int `json:"context"`
+	Output  int `json:"output"`
 }
 
 // PolishTextRequest represents a request to polish text.

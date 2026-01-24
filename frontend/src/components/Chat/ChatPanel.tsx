@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { GetMessages, SendMessage, PolishText, StopMessage } from '../../../wailsjs/go/main/App';
+import { GetMessages, SendMessage, PolishText, StopMessage, SummarizeSession } from '../../../wailsjs/go/main/App';
 import { models } from '../../../wailsjs/go/models';
 import { models as typeModels } from '../../types';
 // Wails の自動生成型には Event や TextPart は含まれないため、フロント側でイベント型を定義します。
@@ -598,6 +598,7 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
         }
     };
 
+
     if (!sessionId) {
         return <div className="chat-panel centered">Select a session to start chatting</div>;
     }
@@ -710,31 +711,33 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     disabled={isLoading || isPolishing}
                 />
                 <div className="input-actions">
-                    <button 
-                        className="polish-button" 
-                        onClick={handlePolishText}
-                        disabled={isLoading || isPolishing || !inputValue.trim()}
-                        title="Polish text using LLM"
-                    >
-                        {isPolishing ? 'Polishing...' : 'LLM Polish'}
-                    </button>
-                    {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') ? (
+                    <div style={{ display: 'flex', gap: '8px', marginLeft: 'auto' }}>
                         <button
-                            className="stop-button"
-                            onClick={handleStopMessage}
-                            title="Stop agent execution"
-                        >
-                            ⏹ Stop
-                        </button>
-                    ) : (
-                        <button 
-                            className="send-button" 
-                            onClick={handleSendMessage}
+                            className="polish-button"
+                            onClick={handlePolishText}
                             disabled={isLoading || isPolishing || !inputValue.trim()}
+                            title="Polish text using LLM"
                         >
-                            Send
+                            {isPolishing ? 'Polishing...' : 'LLM Polish'}
                         </button>
-                    )}
+                        {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') ? (
+                            <button
+                                className="stop-button"
+                                onClick={handleStopMessage}
+                                title="Stop agent execution"
+                            >
+                                ⏹ Stop
+                            </button>
+                        ) : (
+                            <button
+                                className="send-button"
+                                onClick={handleSendMessage}
+                                disabled={isLoading || isPolishing || !inputValue.trim()}
+                            >
+                                Send
+                            </button>
+                        )}
+                    </div>
                 </div>
             </div>
         </div>

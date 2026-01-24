@@ -30,15 +30,31 @@ func (m UserMessage) GetID() string        { return m.ID }
 func (m UserMessage) GetSessionID() string { return m.SessionID }
 func (m UserMessage) GetRole() string      { return m.Role }
 
+// TokenInfo represents token usage information.
+type TokenInfo struct {
+	Input     int        `json:"input"`
+	Output    int        `json:"output"`
+	Reasoning int        `json:"reasoning"`
+	Cache     CacheInfo  `json:"cache"`
+}
+
+// CacheInfo represents cache usage information.
+type CacheInfo struct {
+	Read  int `json:"read"`
+	Write int `json:"write"`
+}
+
 // AssistantMessage represents a message from the assistant.
 type AssistantMessage struct {
 	baseMessage
-	ModelID    string `json:"modelID"`
-	ProviderID string `json:"providerID"`
+	ModelID    string     `json:"modelID"`
+	ProviderID string     `json:"providerID"`
 	Time       struct {
 		Created   int64 `json:"created"`
 		Completed int64 `json:"completed,omitempty"`
 	} `json:"time"`
+	Tokens     TokenInfo  `json:"tokens"`
+	Cost       float64    `json:"cost"`
 }
 
 func (m AssistantMessage) GetID() string        { return m.ID }

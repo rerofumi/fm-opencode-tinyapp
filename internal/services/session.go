@@ -42,3 +42,8 @@ func (s *SessionService) UpdateSession(id, title string) (*models.Session, error
 func (s *SessionService) DeleteSession(id string) error {
 	return s.apiClient.DeleteSession(id)
 }
+
+// SummarizeSession summarizes a session (generates session title/summary).
+func (s *SessionService) SummarizeSession(id string, providerID string, modelID string) error {
+	return s.apiClient.SummarizeSession(id, providerID, modelID)
+}

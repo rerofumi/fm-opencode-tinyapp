@@ -97,6 +97,23 @@ body, html {
     color: #6a717e;
 }
 
+.token-info {
+    font-weight: 500;
+}
+
+.token-info.normal {
+    color: #6a717e;
+}
+
+.token-info.medium {
+    color: #e5c07b; /* オレンジ色 */
+}
+
+.token-info.high {
+    color: #e06c75; /* 赤色 */
+    font-weight: bold;
+}
+
 .statusbar button {
     background: none;
     border: none;
@@ -287,7 +304,7 @@ body, html {
 .input-actions {
     display: flex;
     gap: 8px;
-    justify-content: flex-end;
+    justify-content: space-between;
 }
 
 .send-button {
@@ -341,6 +358,7 @@ body, html {
 .stop-button:active {
     background-color: #b85454;
 }
+
 
 /* Settings Modal Styles */
 .modal-backdrop {

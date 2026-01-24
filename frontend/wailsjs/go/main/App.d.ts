@@ -24,6 +24,8 @@ export function GetProviders():Promise<models.ProvidersResponse>;
 
 export function GetSession(arg1:string):Promise<models.Session>;
 
+export function GetSessionTokens(arg1:string):Promise<models.SessionTokens>;
+
 export function GetSessions():Promise<Array<models.Session>>;
 
 export function PolishText(arg1:string):Promise<string>;
@@ -33,6 +35,8 @@ export function ReadFile(arg1:string):Promise<models.FileContent>;
 export function SendMessage(arg1:string,arg2:models.ChatInput):Promise<models.MessageWithParts>;
 
 export function StopMessage(arg1:string):Promise<void>;
+
+export function SummarizeSession(arg1:string,arg2:string,arg3:string):Promise<void>;
 
 export function UpdateAppConfig(arg1:models.AppConfig):Promise<void>;
 
