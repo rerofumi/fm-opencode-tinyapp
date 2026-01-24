@@ -718,24 +718,24 @@ export const ChatPanel: React.FC<ChatPanelProps> = ({ sessionId, onModelUpdate, 
                     >
                         {isPolishing ? 'Polishing...' : 'LLM Polish'}
                     </button>
-                    <button 
-                        className="send-button" 
-                        onClick={handleSendMessage}
-                        disabled={isLoading || isPolishing || !inputValue.trim()}
-                    >
-                        Send
-                    </button>
-                </div>
-                {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') && (
-                    <div className="stop-button-container">
+                    {(externalPilotStatus === 'running' || externalPilotStatus === 'pending') ? (
                         <button
                             className="stop-button"
                             onClick={handleStopMessage}
+                            title="Stop agent execution"
                         >
-                            Stop
+                            ⏹ Stop
                         </button>
-                    </div>
-                )}
+                    ) : (
+                        <button 
+                            className="send-button" 
+                            onClick={handleSendMessage}
+                            disabled={isLoading || isPolishing || !inputValue.trim()}
+                        >
+                            Send
+                        </button>
+                    )}
+                </div>
             </div>
         </div>
     );
