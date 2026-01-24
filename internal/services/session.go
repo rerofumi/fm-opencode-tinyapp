@@ -43,7 +43,12 @@ func (s *SessionService) DeleteSession(id string) error {
 	return s.apiClient.DeleteSession(id)
 }
 
-// CompactSession compacts a session.
+// SummarizeSession summarizes a session (generates session title/summary).
+func (s *SessionService) SummarizeSession(id string, providerID string, modelID string) error {
+	return s.apiClient.SummarizeSession(id, providerID, modelID)
+}
+
+// CompactSession compacts a session (compress message history).
 func (s *SessionService) CompactSession(id string) error {
 	return s.apiClient.CompactSession(id)
 }

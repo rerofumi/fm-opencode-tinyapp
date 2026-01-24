@@ -50,6 +50,10 @@ export function GetSession(arg1) {
   return window['go']['main']['App']['GetSession'](arg1);
 }
 
+export function GetSessionTokens(arg1) {
+  return window['go']['main']['App']['GetSessionTokens'](arg1);
+}
+
 export function GetSessions() {
   return window['go']['main']['App']['GetSessions']();
 }
@@ -68,6 +72,10 @@ export function SendMessage(arg1, arg2) {
 
 export function StopMessage(arg1) {
   return window['go']['main']['App']['StopMessage'](arg1);
+}
+
+export function SummarizeSession(arg1, arg2, arg3) {
+  return window['go']['main']['App']['SummarizeSession'](arg1, arg2, arg3);
 }
 
 export function UpdateAppConfig(arg1) {

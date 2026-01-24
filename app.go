@@ -160,7 +160,12 @@ func (a *App) DeleteSession(id string) error {
 	return a.sessionService.DeleteSession(id)
 }
 
-// CompactSession compacts a session.
+// SummarizeSession summarizes a session (generates session title/summary).
+func (a *App) SummarizeSession(sessionID string, providerID string, modelID string) error {
+	return a.sessionService.SummarizeSession(sessionID, providerID, modelID)
+}
+
+// CompactSession compacts a session (compress message history).
 func (a *App) CompactSession(sessionID string) error {
 	return a.sessionService.CompactSession(sessionID)
 }
@@ -180,6 +185,62 @@ func (a *App) SendMessage(sessionID string, req *models.ChatInput) (*models.Mess
 // StopMessage stops the current agent execution in a session.
 func (a *App) StopMessage(sessionID string) error {
 	return a.messageService.StopMessage(sessionID)
+}
+
+// GetSessionTokens returns token usage information for a session.
+func (a *App) GetSessionTokens(sessionID string) (*models.SessionTokens, error) {
+	// Get all messages for the session
+	messages, err := a.messageService.GetMessages(sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get messages: %w", err)
+	}
+
+	// Calculate total tokens used
+	totalInput := 0
+	totalOutput := 0
+	var lastModelID, lastProviderID string
+
+	for _, msg := range messages {
+		if assistantMsg, ok := msg.Info.(models.AssistantMessage); ok {
+			totalInput += assistantMsg.Tokens.Input
+			totalOutput += assistantMsg.Tokens.Output
+			lastModelID = assistantMsg.ModelID
+			lastProviderID = assistantMsg.ProviderID
+		}
+	}
+
+	totalUsed := totalInput + totalOutput
+
+	// Get provider information to find context limit
+	providersResp, err := a.configService.GetProviders()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get providers: %w", err)
+	}
+
+	// Find the model's context limit
+	var contextLimit int
+	for _, provider := range providersResp.Providers {
+		if provider.ID == lastProviderID {
+			if model, ok := provider.Models[lastModelID]; ok {
+				contextLimit = model.Limit.Context
+				break
+			}
+		}
+	}
+
+	// Calculate percentage
+	var percentage float64
+	if contextLimit > 0 {
+		percentage = (float64(totalUsed) / float64(contextLimit)) * 100
+	}
+
+	return &models.SessionTokens{
+		Used:       totalUsed,
+		Max:        contextLimit,
+		Percentage: percentage,
+		ModelID:    lastModelID,
+		ProviderID: lastProviderID,
+	}, nil
 }
 
 // === ファイル操作関連 ===

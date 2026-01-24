@@ -4,5 +4,6 @@ go = "latest"
 
 [tasks]
 setup = { run = "go install github.com/wailsapp/wails/v2/cmd/wails@latest", description = "Install Wails CLI" }
+generate = { run = "wails generate module", description = "Generate TypeScript bindings" }
 dev = { run = "wails dev", description = "Run Wails in development mode" }
 build = { run = "wails build", description = "Build the Wails application" }

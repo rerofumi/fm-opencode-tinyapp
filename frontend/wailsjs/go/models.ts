@@ -517,6 +517,26 @@ export namespace models {
 		    return a;
 		}
 	}
+	export class SessionTokens {
+	    used: number;
+	    max: number;
+	    percentage: number;
+	    modelID: string;
+	    providerID: string;
+	
+	    static createFrom(source: any = {}) {
+	        return new SessionTokens(source);
+	    }
+	
+	    constructor(source: any = {}) {
+	        if ('string' === typeof source) source = JSON.parse(source);
+	        this.used = source["used"];
+	        this.max = source["max"];
+	        this.percentage = source["percentage"];
+	        this.modelID = source["modelID"];
+	        this.providerID = source["providerID"];
+	    }
+	}
 	
 	export class SymbolLocation {
 	    uri: string;

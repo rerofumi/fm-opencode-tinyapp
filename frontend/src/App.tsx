@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { SessionList } from './components/Session/SessionList';
 import { ChatPanel } from './components/Chat/ChatPanel';
 import { Settings } from './components/Settings/Settings';
-import { GetSessions, CreateSession, DeleteSession, GetProviders, GetAgents } from '../wailsjs/go/main/App';
+import { GetSessions, CreateSession, DeleteSession, GetProviders, GetAgents, GetSessionTokens } from '../wailsjs/go/main/App';
 import { models } from '../wailsjs/go/models';
 import { EventsOn } from '../wailsjs/runtime';
 import './App.css';
@@ -19,12 +19,22 @@ function App() {
     const [selectedModel, setSelectedModel] = useState<{ providerId: string; modelId: string } | null>(null);
     const [agents, setAgents] = useState<models.Agent[]>([]);
     const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
+    const [tokenInfo, setTokenInfo] = useState<models.SessionTokens | null>(null);
 
     // 3-state pilot lamp:
     // - idle: input-ready
     // - pending: message sent, waiting for first stream event
     // - running: agent producing/streaming until message.completed
     const [pilotStatus, setPilotStatus] = useState<PilotStatus>('idle');
+
+    const loadTokenInfo = useCallback((sessionId: string) => {
+        GetSessionTokens(sessionId)
+            .then(setTokenInfo)
+            .catch(err => {
+                console.error(`Failed to load token info: ${err}`);
+                setTokenInfo(null);
+            });
+    }, []);
 
     const loadData = useCallback(() => {
         GetSessions()
@@ -65,13 +75,18 @@ function App() {
                         }
                     });
                 }
+            } else if (event.type === 'message.updated') {
+                // メッセージ更新時にトークン情報を再取得
+                if (currentSessionId) {
+                    loadTokenInfo(currentSessionId);
+                }
             }
         });
 
         return () => {
             unsubscribe();
         };
-    }, [loadData]);
+    }, [loadData, currentSessionId, loadTokenInfo]);
 
     const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const parts = e.target.value.split(':');
@@ -108,6 +123,7 @@ function App() {
         setCurrentSessionId(id);
         setCurrentModel(null); // Reset model when session changes
         setPilotStatus('idle');
+        loadTokenInfo(id);
     };
 
     // Keyboard shortcuts
@@ -195,6 +211,19 @@ function App() {
                         <span>{sessions.length} sessions</span>
                         {currentModel && (
                             <span className="model-info"> | {currentModel}</span>
+                        )}
+                        {tokenInfo && tokenInfo.max > 0 && (
+                            <span 
+                                className={`token-info ${
+                                    tokenInfo.percentage > 90 ? 'high' : 
+                                    tokenInfo.percentage > 70 ? 'medium' : 
+                                    'normal'
+                                }`}
+                            >
+                                {' | '}
+                                {tokenInfo.used.toLocaleString()} / {tokenInfo.max.toLocaleString()} tokens
+                                {' ('}{tokenInfo.percentage.toFixed(1)}%{')'}
+                            </span>
                         )}
                     </div>
                 </div>

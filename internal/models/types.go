@@ -71,3 +71,12 @@ type LogEntry struct {
 	Extra   interface{} `json:"extra,omitempty"`
 }
 
+// SessionTokens represents token usage information for a session.
+type SessionTokens struct {
+	Used       int     `json:"used"`       // Total tokens used (input + output)
+	Max        int     `json:"max"`        // Maximum context tokens
+	Percentage float64 `json:"percentage"` // Usage percentage (0-100)
+	ModelID    string  `json:"modelID"`    // Current model ID
+	ProviderID string  `json:"providerID"` // Current provider ID
+}
+
