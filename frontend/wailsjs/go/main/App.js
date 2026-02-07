@@ -82,6 +82,10 @@ export function SummarizeSession(arg1, arg2, arg3) {
   return window['go']['main']['App']['SummarizeSession'](arg1, arg2, arg3);
 }
 
+export function SummarizeSessionTitle(arg1) {
+  return window['go']['main']['App']['SummarizeSessionTitle'](arg1);
+}
+
 export function UpdateAppConfig(arg1) {
   return window['go']['main']['App']['UpdateAppConfig'](arg1);
 }

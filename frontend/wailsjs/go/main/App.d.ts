@@ -42,6 +42,8 @@ export function StopMessage(arg1:string):Promise<void>;
 
 export function SummarizeSession(arg1:string,arg2:string,arg3:string):Promise<void>;
 
+export function SummarizeSessionTitle(arg1:string):Promise<string>;
+
 export function UpdateAppConfig(arg1:models.AppConfig):Promise<void>;
 
 export function UpdateSession(arg1:string,arg2:string):Promise<models.Session>;

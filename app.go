@@ -7,6 +7,7 @@ import (
 	"fm-opencode-tinyapp/internal/api"
 	"fm-opencode-tinyapp/internal/models"
 	"fm-opencode-tinyapp/internal/services"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -163,6 +164,107 @@ func (a *App) DeleteSession(id string) error {
 // SummarizeSession summarizes a session (generates session title/summary).
 func (a *App) SummarizeSession(sessionID string, providerID string, modelID string) error {
 	return a.sessionService.SummarizeSession(sessionID, providerID, modelID)
+}
+
+// SummarizeSessionTitle generates a one-line session summary and updates the session title.
+func (a *App) SummarizeSessionTitle(sessionID string) (string, error) {
+	messages, err := a.messageService.GetMessages(sessionID)
+	if err != nil {
+		return "", fmt.Errorf("failed to get messages: %w", err)
+	}
+
+	source := buildSessionSummarySource(messages)
+	if source == "" {
+		return "", fmt.Errorf("no message content available to summarize")
+	}
+
+	title := ""
+
+	// Prefer LLM-based title generation when configured.
+	if a.llmClient != nil {
+		appConfig, cfgErr := a.appConfigService.GetAppConfig()
+		if cfgErr == nil && appConfig.LLM.Model != "" {
+			req := &models.PolishTextRequest{
+				Text: source,
+				Prompt: "以下の会話内容から、セッションタイトルを1行で生成してください。\n" +
+					"条件:\n" +
+					"- 30文字以内\n" +
+					"- 改行しない\n" +
+					"- 余計な引用符や記号を付けない\n" +
+					"- 内容を端的に表す\n\n" +
+					"会話:\n{text}",
+				Model: appConfig.LLM.Model,
+			}
+			resp, llmErr := a.llmClient.PolishText(req)
+			if llmErr == nil && resp != nil {
+				title = sanitizeSingleLineTitle(resp.PolishedText)
+			}
+		}
+	}
+
+	// Fallback when LLM is unavailable/unconfigured/failed.
+	if title == "" {
+		title = sanitizeSingleLineTitle(source)
+	}
+	if title == "" {
+		return "", fmt.Errorf("failed to generate session title")
+	}
+
+	if _, err := a.sessionService.UpdateSession(sessionID, title); err != nil {
+		return "", fmt.Errorf("failed to update session title: %w", err)
+	}
+
+	return title, nil
+}
+
+func buildSessionSummarySource(messages []models.MessageWithParts) string {
+	lines := make([]string, 0, 12)
+	for i := len(messages) - 1; i >= 0 && len(lines) < 12; i-- {
+		msg := messages[i]
+		role := ""
+		if msg.Info != nil {
+			role = msg.Info.GetRole()
+		}
+		for _, part := range msg.Parts {
+			textPart, ok := part.(models.TextPart)
+			if !ok {
+				continue
+			}
+			text := strings.TrimSpace(textPart.Text)
+			if text == "" {
+				continue
+			}
+			text = strings.Join(strings.Fields(text), " ")
+			if len(text) > 140 {
+				text = text[:140]
+			}
+			if role != "" {
+				lines = append([]string{fmt.Sprintf("%s: %s", role, text)}, lines...)
+			} else {
+				lines = append([]string{text}, lines...)
+			}
+			if len(lines) >= 12 {
+				break
+			}
+		}
+	}
+	return strings.TrimSpace(strings.Join(lines, "\n"))
+}
+
+func sanitizeSingleLineTitle(input string) string {
+	s := strings.TrimSpace(input)
+	s = strings.ReplaceAll(s, "\r", " ")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.Trim(s, "\"'` ")
+	s = strings.Join(strings.Fields(s), " ")
+	if s == "" {
+		return ""
+	}
+	runes := []rune(s)
+	if len(runes) > 30 {
+		s = string(runes[:30])
+	}
+	return strings.TrimSpace(s)
 }
 
 // === メッセージ関連 ===

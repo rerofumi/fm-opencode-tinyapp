@@ -187,19 +187,64 @@ html {
     text-overflow: ellipsis;
 }
 
-.delete-session-btn {
+.session-item-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.session-menu-btn {
     background: none;
     border: none;
     color: var(--text-color);
     cursor: pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
     visibility: hidden;
     opacity: 0;
     transition: opacity 0.2s;
 }
 
-.session-item:hover .delete-session-btn {
+.session-item:hover .session-menu-btn,
+.session-item.active .session-menu-btn,
+.session-menu-btn:focus-visible {
     visibility: visible;
     opacity: 1;
+}
+
+.session-menu {
+    position: absolute;
+    top: 28px;
+    right: 0;
+    min-width: 110px;
+    display: flex;
+    flex-direction: column;
+    background-color: #2a2f38;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 4px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+    z-index: 20;
+}
+
+.session-menu-item {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    text-align: left;
+    padding: 6px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.session-menu-item:hover {
+    background-color: var(--active-item-bg);
+}
+
+.session-menu-item.danger {
+    color: #e06c75;
 }
 
 /* ChatPanel Styles */
