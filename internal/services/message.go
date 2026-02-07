@@ -29,3 +29,13 @@ func (s *MessageService) SendMessage(sessionID string, req *models.ChatInput) (*
 func (s *MessageService) StopMessage(sessionID string) error {
 	return s.apiClient.StopMessage(sessionID)
 }
+
+// RespondPermission responds to a pending permission/question request in a session.
+func (s *MessageService) RespondPermission(sessionID string, permissionID string, response string) error {
+	return s.apiClient.RespondPermission(sessionID, permissionID, response)
+}
+
+// SendTUIControlResponse sends a response body for interactive TUI control requests.
+func (s *MessageService) SendTUIControlResponse(body interface{}) error {
+	return s.apiClient.SendTUIControlResponse(body)
+}

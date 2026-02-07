@@ -266,3 +266,38 @@ func (c *Client) StopMessage(sessionID string) error {
 	}
 	return nil
 }
+
+// RespondPermission responds to a pending permission/question request in a session.
+// response must be one of: "once", "always", "reject".
+func (c *Client) RespondPermission(sessionID string, permissionID string, response string) error {
+	body := map[string]string{
+		"response": response,
+	}
+	res, err := c.doRequest("POST", fmt.Sprintf("/session/%s/permissions/%s", sessionID, permissionID), nil, body)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("unexpected status code: %d, response body: %s", res.StatusCode, string(respBody))
+	}
+	return nil
+}
+
+// SendTUIControlResponse sends a response for interactive TUI control requests.
+func (c *Client) SendTUIControlResponse(body interface{}) error {
+	reqBody := map[string]interface{}{
+		"body": body,
+	}
+	res, err := c.doRequest("POST", "/tui/control/response", nil, reqBody)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("unexpected status code: %d, response body: %s", res.StatusCode, string(respBody))
+	}
+	return nil
+}

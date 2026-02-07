@@ -62,8 +62,16 @@ export function ReadFile(arg1) {
   return window['go']['main']['App']['ReadFile'](arg1);
 }
 
+export function RespondPermission(arg1, arg2, arg3) {
+  return window['go']['main']['App']['RespondPermission'](arg1, arg2, arg3);
+}
+
 export function SendMessage(arg1, arg2) {
   return window['go']['main']['App']['SendMessage'](arg1, arg2);
+}
+
+export function SendTUIControlResponse(arg1) {
+  return window['go']['main']['App']['SendTUIControlResponse'](arg1);
 }
 
 export function StopMessage(arg1) {

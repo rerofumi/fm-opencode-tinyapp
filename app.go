@@ -182,6 +182,16 @@ func (a *App) StopMessage(sessionID string) error {
 	return a.messageService.StopMessage(sessionID)
 }
 
+// RespondPermission responds to a pending permission/question request in a session.
+func (a *App) RespondPermission(sessionID string, permissionID string, response string) error {
+	return a.messageService.RespondPermission(sessionID, permissionID, response)
+}
+
+// SendTUIControlResponse sends a response body for interactive TUI control requests.
+func (a *App) SendTUIControlResponse(body interface{}) error {
+	return a.messageService.SendTUIControlResponse(body)
+}
+
 // GetSessionTokens returns token usage information for a session.
 func (a *App) GetSessionTokens(sessionID string) (*models.SessionTokens, error) {
 	// Get all messages for the session

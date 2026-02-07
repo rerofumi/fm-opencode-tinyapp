@@ -32,7 +32,11 @@ export function PolishText(arg1:string):Promise<string>;
 
 export function ReadFile(arg1:string):Promise<models.FileContent>;
 
+export function RespondPermission(arg1:string,arg2:string,arg3:string):Promise<void>;
+
 export function SendMessage(arg1:string,arg2:models.ChatInput):Promise<models.MessageWithParts>;
+
+export function SendTUIControlResponse(arg1:any):Promise<void>;
 
 export function StopMessage(arg1:string):Promise<void>;
 
