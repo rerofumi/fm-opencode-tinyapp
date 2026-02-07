@@ -191,6 +191,21 @@ func (c *Client) GetConfig() (*models.ServerConfig, error) {
 	return &config, err
 }
 
+// UpdateConfigModel updates the default model in server configuration.
+func (c *Client) UpdateConfigModel(model string) error {
+	body := map[string]string{"model": model}
+	res, err := c.doRequest("PATCH", "/global/config", nil, body)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	if res.StatusCode < 200 || res.StatusCode >= 300 {
+		respBody, _ := io.ReadAll(res.Body)
+		return fmt.Errorf("unexpected status code: %d, response body: %s", res.StatusCode, string(respBody))
+	}
+	return nil
+}
+
 // FindInFiles searches for a pattern in files.
 func (c *Client) FindInFiles(pattern string) ([]models.SearchResult, error) {
 	query := url.Values{}

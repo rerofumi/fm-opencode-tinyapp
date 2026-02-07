@@ -90,6 +90,10 @@ export function UpdateAppConfig(arg1) {
   return window['go']['main']['App']['UpdateAppConfig'](arg1);
 }
 
+export function UpdateConfigModel(arg1) {
+  return window['go']['main']['App']['UpdateConfigModel'](arg1);
+}
+
 export function UpdateSession(arg1, arg2) {
   return window['go']['main']['App']['UpdateSession'](arg1, arg2);
 }

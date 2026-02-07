@@ -124,6 +124,11 @@ func (a *App) GetConfig() (*models.ServerConfig, error) {
 	return a.configService.GetConfig()
 }
 
+// UpdateConfigModel updates the server default model configuration.
+func (a *App) UpdateConfigModel(model string) error {
+	return a.configService.UpdateConfigModel(model)
+}
+
 // GetProviders returns the list of available providers and models.
 func (a *App) GetProviders() (*models.ProvidersResponse, error) {
 	return a.configService.GetProviders()

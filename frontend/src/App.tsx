@@ -4,6 +4,8 @@ import { ChatPanel } from "./components/Chat/ChatPanel";
 import { Settings } from "./components/Settings/Settings";
 import {
   GetSessions,
+  GetConfig,
+  UpdateConfigModel,
   CreateSession,
   DeleteSession,
   SummarizeSession,
@@ -96,6 +98,27 @@ function App() {
     return null;
   };
 
+  const resolveConfiguredModel = (
+    configuredModel: string | undefined,
+    providers: models.Provider[],
+  ): SelectedModel | null => {
+    if (!configuredModel) return null;
+    const separatorIndex = configuredModel.indexOf("/");
+    if (separatorIndex <= 0 || separatorIndex >= configuredModel.length - 1) {
+      return null;
+    }
+
+    const providerId = configuredModel.slice(0, separatorIndex);
+    const modelId = configuredModel.slice(separatorIndex + 1);
+    const provider = providers.find((p) => p.id === providerId);
+    if (!provider || !provider.models) return null;
+    if (!Object.prototype.hasOwnProperty.call(provider.models, modelId)) {
+      return null;
+    }
+
+    return { providerId, modelId };
+  };
+
   const loadData = useCallback(() => {
     GetSessions()
       .then(setSessions)
@@ -104,9 +127,23 @@ function App() {
       .then((response) => {
         setProviders(response.providers);
         const defaultModel = resolveDefaultModel(response);
-        if (defaultModel) {
-          setSelectedModel((prev) => prev ?? defaultModel);
-        }
+        GetConfig()
+          .then((config) => {
+            const configuredModel = resolveConfiguredModel(
+              config.model,
+              response.providers,
+            );
+            const initialModel = configuredModel ?? defaultModel;
+            if (initialModel) {
+              setSelectedModel((prev) => prev ?? initialModel);
+            }
+          })
+          .catch((err) => {
+            if (defaultModel) {
+              setSelectedModel((prev) => prev ?? defaultModel);
+            }
+            setError(`Failed to load config: ${err}`);
+          });
       })
       .catch((err) => setError(`Failed to load providers: ${err}`));
     GetAgents()
@@ -159,6 +196,10 @@ function App() {
       return;
     }
     setSelectedModel({ providerId, modelId });
+    const model = `${providerId}/${modelId}`;
+    UpdateConfigModel(model).catch((err) =>
+      setError(`Failed to persist model config: ${err}`),
+    );
   };
 
   const handleSessionCreate = useCallback(() => {
