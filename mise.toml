@@ -8,3 +8,5 @@ generate = { run = "wails generate module", description = "Generate TypeScript b
 dev = { run = "wails dev", description = "Run Wails in development mode" }
 build = { run = "wails build", description = "Build the Wails application" }
 build-serve = { run = "wails build && go build -o build/bin/fm-opencode-tinyapp-serve.exe .", description = "Build the Wails application and a console binary for --serve mode" }
+fmt = { run = "gofmt -w app.go", description = "Format Go files" }
+test = { run = "go test ./...", description = "Run Go tests" }
