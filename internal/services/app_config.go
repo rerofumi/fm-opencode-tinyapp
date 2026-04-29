@@ -36,7 +36,7 @@ func NewAppConfigService() (*AppConfigService, error) {
 誤字脱字や文法的な誤りも修正してください。
 修正後の文書のみ出力し、返答などは不要です。
 ---
-{修正したいテキストを入力してください}`,
+{text}`,
 			},
 		}
 		data, marshalErr := json.MarshalIndent(defaultConfig, "", "  ")
