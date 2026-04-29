@@ -34,6 +34,7 @@ function App() {
   const [agents, setAgents] = useState<models.Agent[]>([]);
   const [selectedAgent, setSelectedAgent] = useState<string | null>(null);
   const [tokenInfo, setTokenInfo] = useState<models.SessionTokens | null>(null);
+  const CONNECTION_ERROR_RELOAD_MS = 10_000;
 
   // 3-state pilot lamp:
   // - idle: input-ready
@@ -186,6 +187,27 @@ function App() {
       unsubscribe();
     };
   }, [loadData, currentSessionId, loadTokenInfo]);
+
+  useEffect(() => {
+    if (!error) return;
+
+    const normalizedError = error.toLowerCase();
+    const isConnectionError =
+      normalizedError.includes("接続不能") ||
+      normalizedError.includes("failed to fetch") ||
+      normalizedError.includes("networkerror") ||
+      normalizedError.includes("connection refused") ||
+      normalizedError.includes("econnrefused") ||
+      normalizedError.includes("connection reset");
+
+    if (!isConnectionError) return;
+
+    const timerId = window.setTimeout(() => {
+      window.location.reload();
+    }, CONNECTION_ERROR_RELOAD_MS);
+
+    return () => window.clearTimeout(timerId);
+  }, [error]);
 
   const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const parts = e.target.value.split(":");
