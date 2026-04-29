@@ -126,7 +126,7 @@ func (a *App) ensureOpenCodeServer(serverURL string) error {
 		return fmt.Errorf("failed to get current directory: %w", err)
 	}
 
-	cmd := exec.Command("opencode", "api")
+	cmd := exec.Command("opencode", "serve", "--port", "23450")
 	cmd.Dir = cwd
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("failed to start opencode api process: %w", err)
