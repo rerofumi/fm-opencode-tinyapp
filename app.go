@@ -29,6 +29,7 @@ type App struct {
 	streamClient     *api.StreamClient
 	llmClient        *api.LLMClient
 	logger           *logrus.Logger
+	eventEmitter     func(event *models.Event)
 	opencodeProcess  *exec.Cmd
 }
 
@@ -76,9 +77,19 @@ func (a *App) startup(ctx context.Context) {
 	a.messageService = services.NewMessageService(apiClient)
 	a.configService = services.NewConfigService(apiClient)
 	a.fileService = services.NewFileService(apiClient)
+	a.eventEmitter = func(event *models.Event) {
+		runtime.EventsEmit(a.ctx, "server-event", event)
+	}
 
-	// Start the event stream
+}
+
+func (a *App) startEventForwardingAsync() {
 	go a.startEventForwarding()
+}
+
+func (a *App) startupWails(ctx context.Context) {
+	a.startup(ctx)
+	a.startEventForwardingAsync()
 }
 
 func (a *App) startEventForwarding() {
@@ -102,7 +113,9 @@ func (a *App) startEventForwarding() {
 				event.Type, event.Properties)
 
 			// Forward the original event to the frontend
-			runtime.EventsEmit(a.ctx, "server-event", event)
+			if a.eventEmitter != nil {
+				a.eventEmitter(event)
+			}
 		}
 	}
 }
