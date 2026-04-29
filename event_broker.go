@@ -11,14 +11,14 @@ import (
 
 type eventBroker struct {
 	mu      sync.Mutex
-	clients map[chan models.ServerEvent]struct{}
+	clients map[chan *models.Event]struct{}
 }
 
 func newEventBroker() *eventBroker {
-	return &eventBroker{clients: make(map[chan models.ServerEvent]struct{})}
+	return &eventBroker{clients: make(map[chan *models.Event]struct{})}
 }
 
-func (b *eventBroker) Emit(event models.ServerEvent) {
+func (b *eventBroker) Emit(event *models.Event) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	for ch := range b.clients {
@@ -40,7 +40,7 @@ func (b *eventBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ch := make(chan models.ServerEvent, 16)
+	ch := make(chan *models.Event, 16)
 	b.mu.Lock()
 	b.clients[ch] = struct{}{}
 	b.mu.Unlock()

@@ -47,7 +47,7 @@ func main() {
 			Assets: assets,
 		},
 		BackgroundColour: &options.RGBA{R: 27, G: 38, B: 54, A: 1},
-		OnStartup:        app.startup,
+		OnStartup:        app.startupWails,
 		Bind: []interface{}{
 			app,
 		},
@@ -66,6 +66,7 @@ func runHTTPServer(host string, port int) error {
 
 	eventBroker := newEventBroker()
 	app.eventEmitter = eventBroker.Emit
+	app.startEventForwardingAsync()
 
 	distFS, err := fs.Sub(assets, "frontend/dist")
 	if err != nil {
