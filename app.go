@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
 	"fm-opencode-tinyapp/internal/api"
 	"fm-opencode-tinyapp/internal/models"
 	"fm-opencode-tinyapp/internal/services"
+	"fmt"
+	"log"
+	"net"
+	"net/url"
+	"os"
+	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/wailsapp/wails/v2/pkg/runtime"
@@ -24,6 +29,7 @@ type App struct {
 	streamClient     *api.StreamClient
 	llmClient        *api.LLMClient
 	logger           *logrus.Logger
+	opencodeProcess  *exec.Cmd
 }
 
 // NewApp creates a new App application struct
@@ -51,6 +57,10 @@ func (a *App) startup(ctx context.Context) {
 	appConfig, err := a.appConfigService.GetAppConfig()
 	if err != nil {
 		log.Fatalf("Failed to load app config: %v", err)
+	}
+
+	if err := a.ensureOpenCodeServer(appConfig.ServerURL); err != nil {
+		a.logger.Warnf("failed to ensure opencode server: %v", err)
 	}
 
 	// Initialize API client with the loaded URL
@@ -83,18 +93,57 @@ func (a *App) startEventForwarding() {
 			a.logger.Info("Context done, stopping event forwarding.")
 			a.streamClient.Stop()
 			return
-			case event, ok := <-eventChan:
-				if !ok {
-					a.logger.Info("Event channel closed, stopping event forwarding.")
-					return
-				}
-				a.logger.Infof("Forwarding event: Type=%s, Properties=%+v",
-					event.Type, event.Properties)
+		case event, ok := <-eventChan:
+			if !ok {
+				a.logger.Info("Event channel closed, stopping event forwarding.")
+				return
+			}
+			a.logger.Infof("Forwarding event: Type=%s, Properties=%+v",
+				event.Type, event.Properties)
 
-				// Forward the original event to the frontend
-				runtime.EventsEmit(a.ctx, "server-event", event)
+			// Forward the original event to the frontend
+			runtime.EventsEmit(a.ctx, "server-event", event)
 		}
 	}
+}
+
+func (a *App) ensureOpenCodeServer(serverURL string) error {
+	parsedURL, err := url.Parse(serverURL)
+	if err != nil {
+		return fmt.Errorf("invalid server URL %q: %w", serverURL, err)
+	}
+
+	if parsedURL.Host == "" {
+		return fmt.Errorf("server URL %q has no host", serverURL)
+	}
+
+	if isTCPPortOpen(parsedURL.Host, 500*time.Millisecond) {
+		return nil
+	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	cmd := exec.Command("opencode", "api")
+	cmd.Dir = cwd
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start opencode api process: %w", err)
+	}
+
+	a.opencodeProcess = cmd
+	a.logger.Infof("started opencode api process (pid=%d) in %s", cmd.Process.Pid, cwd)
+	return nil
+}
+
+func isTCPPortOpen(address string, timeout time.Duration) bool {
+	conn, err := net.DialTimeout("tcp", address, timeout)
+	if err != nil {
+		return false
+	}
+	_ = conn.Close()
+	return true
 }
 
 // Shutdown is called when the app is shutting down.
@@ -102,6 +151,13 @@ func (a *App) shutdown(ctx context.Context) {
 	a.logger.Info("Shutting down application.")
 	if a.streamClient != nil {
 		a.streamClient.Stop()
+	}
+	if a.opencodeProcess != nil && a.opencodeProcess.Process != nil {
+		if err := a.opencodeProcess.Process.Kill(); err != nil {
+			a.logger.Warnf("failed to stop opencode api process: %v", err)
+		}
+		_, _ = a.opencodeProcess.Process.Wait()
+		a.opencodeProcess = nil
 	}
 }
 
